@@ -1,0 +1,10 @@
+{
+  "files": [
+    { "path": "dist/assets/vendor-*.js", "maxSize": "110 kB" },
+    { "path": "dist/assets/routes-*.js", "maxSize": "25 kB" },
+    { "path": "dist/assets/offline-*.js", "maxSize": "45 kB" },
+    { "path": "dist/assets/charts-*.js", "maxSize": "110 kB" }
+  ],
+  "defaultCompression": "gzip",
+  "ci": { "trackBranches": ["main"] }
+}

@@ -1,0 +1,1 @@
+:root{--page:#E7E9E3;--panel:#FAFBF7;--ink:#15181A;--soft:#586059;--rule:#C6CCC2;--sea:#26424D;--grain:#C08A2E;--leaf:#3D6B3A;--murram:#9C3B1B}*{box-sizing:border-box}body{margin:0;background:var(--page);color:var(--ink);font-family:system-ui,sans-serif}button,a{min-height:44px} .numeric{font-variant-numeric:tabular-nums;font-family:ui-monospace,monospace}
