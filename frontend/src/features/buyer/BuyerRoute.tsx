@@ -2,10 +2,10 @@ import { type FormEvent, useState } from "react";
 
 import { ApiError } from "../../api/client";
 import { Button } from "../../design/ui/Button";
+import { Card } from "../../design/ui/Card";
 import { EmptyState } from "../../design/ui/EmptyState";
 import { Field } from "../../design/ui/Field";
 import { Pill } from "../../design/ui/Pill";
-import { useLogout } from "../../api/hooks/useMe";
 import { useLotDetail, useOpenLots, useSubmitBid } from "./useLots";
 
 function BidForm({ lotId }: { lotId: number }) {
@@ -21,7 +21,7 @@ function BidForm({ lotId }: { lotId: number }) {
   return (
     <form
       onSubmit={onSubmit}
-      className="flex flex-col gap-3 rounded-lg bg-panel p-4"
+      className="flex flex-col gap-3"
     >
       <h3 className="text-sm font-semibold uppercase tracking-wide text-soft">
         Submit a sealed bid
@@ -67,21 +67,17 @@ function LotDetailPanel({
   const myBid = lot.bids[0];
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg bg-panel p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-ink">
-            {lot.crop} · {lot.parish}
-          </h2>
-          <p className="tabular text-sm text-soft">
-            {lot.bags} / {lot.min_bags} bags ·{" "}
-            <Pill tone="grain">{lot.status}</Pill>
-          </p>
-        </div>
+    <Card
+      title={`${lot.crop} · ${lot.parish}`}
+      action={
         <Button variant="ghost" onClick={onClose}>
           Close
         </Button>
-      </div>
+      }
+    >
+      <p className="mb-4 tabular text-sm text-soft">
+        {lot.bags} / {lot.min_bags} bags · <Pill tone="grain">{lot.status}</Pill>
+      </p>
 
       {lot.status === "open" ? (
         myBid ? (
@@ -118,55 +114,47 @@ function LotDetailPanel({
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
 function BuyerRoute() {
   const { data: lots, isLoading } = useOpenLots();
-  const logout = useLogout();
   const [selected, setSelected] = useState<number | null>(null);
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4">
-      <header className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-ink">Open lots</h1>
-        <Button
-          variant="ghost"
-          onClick={() => logout.mutate()}
-          disabled={logout.isPending}
-        >
-          Sign out
-        </Button>
-      </header>
+    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+      <Card title="Open lots">
+        {selected != null && (
+          <div className="mb-4">
+            <LotDetailPanel lotId={selected} onClose={() => setSelected(null)} />
+          </div>
+        )}
 
-      {selected != null && (
-        <LotDetailPanel lotId={selected} onClose={() => setSelected(null)} />
-      )}
-
-      {isLoading ? (
-        <div className="p-4 text-soft">Loading…</div>
-      ) : !lots || lots.length === 0 ? (
-        <EmptyState title="No lots are open for bidding right now." />
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {lots.map((lot) => (
-            <li key={lot.id}>
-              <button
-                onClick={() => setSelected(lot.id)}
-                className="flex w-full items-center justify-between rounded-lg bg-panel p-4 text-left hover:bg-page"
-              >
-                <span className="font-medium text-ink">
-                  {lot.crop} · {lot.parish}
-                </span>
-                <span className="tabular text-sm text-soft">
-                  {lot.bags} / {lot.min_bags} bags
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+        {isLoading ? (
+          <div className="text-soft">Loading…</div>
+        ) : !lots || lots.length === 0 ? (
+          <EmptyState title="No lots are open for bidding right now." />
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {lots.map((lot) => (
+              <li key={lot.id}>
+                <button
+                  onClick={() => setSelected(lot.id)}
+                  className="flex w-full items-center justify-between rounded-xl bg-page p-4 text-left hover:bg-rule/40"
+                >
+                  <span className="font-medium text-ink">
+                    {lot.crop} · {lot.parish}
+                  </span>
+                  <span className="tabular text-sm text-soft">
+                    {lot.bags} / {lot.min_bags} bags
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
     </div>
   );
 }

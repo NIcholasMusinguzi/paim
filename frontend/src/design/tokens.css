@@ -1,20 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  --color-page: #e7e9e3;
-  --color-panel: #fafbf7;
-  --color-ink: #15181a;
-  --color-soft: #586059;
-  --color-rule: #c6ccc2;
-  --color-sea: #26424d; /* chrome, primary actions */
-  --color-grain: #c08a2e; /* lot progress - the one bold element */
-  --color-leaf: #3d6b3a; /* good state */
-  --color-murram: #9c3b1b; /* needs attention */
+  --color-page: #eef3ea;
+  --color-panel: #ffffff;
+  --color-ink: #14221c;
+  --color-soft: #5c6b62;
+  --color-rule: #d5e0d4;
+  --color-sea: #0f3d2e; /* forest chrome — sidebar, hero, primary */
+  --color-leaf: #2f9e44; /* bright accent, positive trends */
+  --color-sprout: #8fd19e;
+  --color-grain: #e0a106; /* maize / warning */
+  --color-murram: #c2410c; /* needs attention */
 
-  --font-sans: "Helvetica Neue", Arial, "Liberation Sans", sans-serif;
+  --font-sans: "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif;
   --font-mono: ui-monospace, "DejaVu Sans Mono", monospace;
 
-  --text-figure: 1.5rem; /* tabular numerals, dashboards */
+  --text-figure: 1.5rem;
+  --shadow-card: 0 1px 2px rgb(20 34 28 / 0.05), 0 8px 24px rgb(20 34 28 / 0.06);
 }
 
 body {
@@ -23,7 +25,6 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Every numeric cell, everywhere. */
 .tabular {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;

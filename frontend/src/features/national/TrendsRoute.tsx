@@ -1,5 +1,4 @@
-import { Link } from "react-router";
-
+import { Card } from "../../design/ui/Card";
 import { ApiError } from "../../api/client";
 import { Button } from "../../design/ui/Button";
 import { EmptyState } from "../../design/ui/EmptyState";
@@ -9,7 +8,7 @@ import { type TrendInsight, useApproveTrend, useTrends } from "./useTrends";
 function PendingRow({ insight }: { insight: TrendInsight }) {
   const approve = useApproveTrend();
   return (
-    <li className="flex flex-col gap-2 rounded-lg bg-panel p-4">
+    <li className="flex flex-col gap-2 rounded-xl border border-rule bg-page p-4">
       <div className="flex items-center gap-2 text-xs text-soft">
         <Pill tone="grain">{insight.crop}</Pill>
         <span>{insight.scope_level}</span>
@@ -29,7 +28,7 @@ function PendingRow({ insight }: { insight: TrendInsight }) {
 
 function PublishedRow({ insight }: { insight: TrendInsight }) {
   return (
-    <li className="flex flex-col gap-1 rounded-lg bg-panel p-4">
+    <li className="flex flex-col gap-1 rounded-xl border border-rule bg-page p-4">
       <div className="flex items-center gap-2 text-xs text-soft">
         <Pill tone="leaf">{insight.crop}</Pill>
         <span>{insight.scope_level}</span>
@@ -45,43 +44,39 @@ function TrendsRoute() {
   const published = useTrends("published");
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6 p-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-ink">Insight approval queue</h1>
-        <Link to="/national" className="text-sm text-sea underline">
-          Dashboard
-        </Link>
-      </div>
-
-      <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-soft">Awaiting approval</h2>
-        {pending.isLoading ? (
-          <p className="text-soft">Loading…</p>
-        ) : !pending.data || pending.data.length === 0 ? (
-          <EmptyState title="No insights are waiting for approval." />
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {pending.data.map((insight) => (
-              <PendingRow key={insight.id} insight={insight} />
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-soft">Published</h2>
-        {published.isLoading ? (
-          <p className="text-soft">Loading…</p>
-        ) : !published.data || published.data.length === 0 ? (
-          <EmptyState title="Nothing has been published yet." />
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {published.data.map((insight) => (
-              <PublishedRow key={insight.id} insight={insight} />
-            ))}
-          </ul>
-        )}
-      </section>
+    <div className="flex flex-col gap-4">
+      <Card title="Insight approval queue">
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section className="flex flex-col gap-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-soft">Awaiting approval</h3>
+            {pending.isLoading ? (
+              <p className="text-soft">Loading…</p>
+            ) : !pending.data || pending.data.length === 0 ? (
+              <EmptyState title="No insights are waiting for approval." />
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {pending.data.map((insight) => (
+                  <PendingRow key={insight.id} insight={insight} />
+                ))}
+              </ul>
+            )}
+          </section>
+          <section className="flex flex-col gap-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-soft">Published</h3>
+            {published.isLoading ? (
+              <p className="text-soft">Loading…</p>
+            ) : !published.data || published.data.length === 0 ? (
+              <EmptyState title="Nothing has been published yet." />
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {published.data.map((insight) => (
+                  <PublishedRow key={insight.id} insight={insight} />
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+      </Card>
     </div>
   );
 }

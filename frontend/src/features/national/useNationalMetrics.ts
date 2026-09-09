@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 
 import { api } from "../../api/client";
 import type { components } from "../../api/schema";
@@ -21,6 +21,19 @@ export function useNationalMetrics(seasonId: number | null, cropId: number | nul
     queryKey: ["metrics", "national", seasonId, cropId] as const,
     queryFn: () => api<NationalMetricsResponse>(`/metrics/national/?season=${seasonId}&crop=${cropId}`),
     enabled: seasonId != null && cropId != null,
+  });
+}
+
+export function useCropNationalMetrics(
+  seasonId: number | null,
+  crops: { id: number; name: string }[] | undefined,
+) {
+  return useQueries({
+    queries: (crops ?? []).map((crop) => ({
+      queryKey: ["metrics", "national", seasonId, crop.id] as const,
+      queryFn: () => api<NationalMetricsResponse>(`/metrics/national/?season=${seasonId}&crop=${crop.id}`),
+      enabled: seasonId != null,
+    })),
   });
 }
 

@@ -3,6 +3,7 @@ import { type FormEvent, useState } from "react";
 import { useCreatePost, usePosts } from "../../api/hooks/usePosts";
 import { useAuth } from "../../app/AuthProvider";
 import { Button } from "../../design/ui/Button";
+import { Card } from "../../design/ui/Card";
 import { EmptyState } from "../../design/ui/EmptyState";
 import { Field } from "../../design/ui/Field";
 import { Select } from "../../design/ui/Select";
@@ -37,32 +38,33 @@ function PostComposer() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-3 rounded-lg bg-panel p-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-soft">Post an announcement</h2>
-      {canChooseNarrower && (
-        <div className="flex flex-wrap items-end gap-3">
-          <Select label="Audience" value={target} onChange={(e) => setTarget(e.target.value as "own" | "parish")}>
-            <option value="own">{OWN_SCOPE_LABEL[me.scope.level] ?? "My scope"}</option>
-            <option value="parish">A specific parish…</option>
-          </Select>
-          {target === "parish" && (
-            <Select label="Parish" required value={parishId} onChange={(e) => setParishId(e.target.value)}>
-              <option value="">Select…</option>
-              {parishes?.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} ({p.district})
-                </option>
-              ))}
+    <Card title="Post an announcement">
+      <form onSubmit={onSubmit} className="flex flex-col gap-3">
+        {canChooseNarrower && (
+          <div className="flex flex-wrap items-end gap-3">
+            <Select label="Audience" value={target} onChange={(e) => setTarget(e.target.value as "own" | "parish")}>
+              <option value="own">{OWN_SCOPE_LABEL[me.scope.level] ?? "My scope"}</option>
+              <option value="parish">A specific parish…</option>
             </Select>
-          )}
-        </div>
-      )}
-      <Field label="Title" required value={title} onChange={(e) => setTitle(e.target.value)} />
-      <Field label="Message" required value={body} onChange={(e) => setBody(e.target.value)} />
-      <Button type="submit" disabled={create.isPending || (target === "parish" && !parishId)} className="self-start">
-        {create.isPending ? "Posting…" : "Post"}
-      </Button>
-    </form>
+            {target === "parish" && (
+              <Select label="Parish" required value={parishId} onChange={(e) => setParishId(e.target.value)}>
+                <option value="">Select…</option>
+                {parishes?.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.district})
+                  </option>
+                ))}
+              </Select>
+            )}
+          </div>
+        )}
+        <Field label="Title" required value={title} onChange={(e) => setTitle(e.target.value)} />
+        <Field label="Message" required value={body} onChange={(e) => setBody(e.target.value)} />
+        <Button type="submit" disabled={create.isPending || (target === "parish" && !parishId)} className="self-start">
+          {create.isPending ? "Posting…" : "Post"}
+        </Button>
+      </form>
+    </Card>
   );
 }
 
@@ -72,8 +74,7 @@ export function PostsSection() {
   return (
     <div className="flex flex-col gap-4">
       <PostComposer />
-      <section className="flex flex-col gap-3 rounded-lg bg-panel p-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-soft">Recent posts</h2>
+      <Card title="Recent posts">
         {isLoading ? (
           <p className="text-soft">Loading…</p>
         ) : !posts || posts.length === 0 ? (
@@ -94,7 +95,7 @@ export function PostsSection() {
             </div>
           ))
         )}
-      </section>
+      </Card>
     </div>
   );
 }

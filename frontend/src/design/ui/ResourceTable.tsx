@@ -23,7 +23,7 @@ export function ResourceTable<T extends { id: number }>({
         <thead>
           <tr className="border-b border-rule text-left text-xs text-soft">
             {columns.map((c) => (
-              <th key={c.key} className="py-1 pr-3 font-medium">
+              <th key={c.key} className="py-2 pr-3 font-medium">
                 {c.label}
               </th>
             ))}
@@ -34,7 +34,7 @@ export function ResourceTable<T extends { id: number }>({
           {rows.map((row) => (
             <tr key={row.id} className="border-b border-rule last:border-0">
               {columns.map((c) => (
-                <td key={c.key} className="py-1.5 pr-3 text-ink">
+                <td key={c.key} className="py-2.5 pr-3 text-ink">
                   {c.render ? c.render(row) : String((row as Record<string, unknown>)[c.key] ?? "—")}
                 </td>
               ))}

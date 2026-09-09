@@ -1,8 +1,8 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { type FormEvent, useEffect, useState } from "react";
 
-import { useLogout } from "../../api/hooks/useMe";
 import { Button } from "../../design/ui/Button";
+import { Card } from "../../design/ui/Card";
 import { EmptyState } from "../../design/ui/EmptyState";
 import { Field } from "../../design/ui/Field";
 import { Meter } from "../../design/ui/Meter";
@@ -53,8 +53,8 @@ function RegisterFarmerForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-3 rounded-lg bg-panel p-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-soft">Register a farmer</h2>
+    <Card title="Register a farmer">
+      <form onSubmit={onSubmit} className="flex flex-col gap-3">
       <Field label="Full name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
       <Select label="Village" required value={villageId} onChange={(e) => setVillageId(e.target.value)}>
         <option value="">Select village…</option>
@@ -71,8 +71,9 @@ function RegisterFarmerForm() {
       <Field label="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
       <Button type="submit" disabled={register.isPending}>
         Register — saves on this phone, syncs when possible
-      </Button>
-    </form>
+        </Button>
+      </form>
+    </Card>
   );
 }
 
@@ -142,37 +143,29 @@ function OpenLots() {
   const lots = useLiveQuery(() => db.lots.toArray(), [], []);
   if (lots.length === 0) return null;
   return (
-    <section className="flex flex-col gap-3 rounded-lg bg-panel p-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-soft">Open lots</h2>
+    <Card title="Open lots">
       {lots.map((lot) => (
         <Meter key={lot.id} value={lot.bags} target={lot.min_bags} label={lot.crop} />
       ))}
-    </section>
+    </Card>
   );
 }
 
 function AgentRoute() {
-  const logout = useLogout();
-
   useEffect(() => {
     void bootstrap();
   }, []);
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6 p-4">
-      <header className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-ink">Agent</h1>
-        <Button variant="ghost" onClick={() => logout.mutate()} disabled={logout.isPending}>
-          Sign out
-        </Button>
-      </header>
-      <SyncStatus />
+    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+      <Card>
+        <SyncStatus />
+      </Card>
       <OpenLots />
       <RegisterFarmerForm />
-      <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-soft">Farmers on this device</h2>
+      <Card title="Farmers on this device">
         <FarmerList />
-      </section>
+      </Card>
     </div>
   );
 }

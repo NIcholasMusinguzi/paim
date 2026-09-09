@@ -3,6 +3,7 @@ import { type FormEvent, useState } from "react";
 import { ApiError } from "../../api/client";
 import { useMyAdvisoryRequests, useSubmitAdvisoryRequest } from "../../api/hooks/useAdvisoryRequests";
 import { Button } from "../../design/ui/Button";
+import { Card } from "../../design/ui/Card";
 import { EmptyState } from "../../design/ui/EmptyState";
 import { Field } from "../../design/ui/Field";
 import { Pill } from "../../design/ui/Pill";
@@ -19,8 +20,7 @@ export function AdviceRequestSection() {
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-lg bg-panel p-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-soft">Ask for advice</h2>
+    <Card title="Ask for advice">
 
       <form onSubmit={onSubmit} className="flex flex-col gap-2">
         <Field label="Your question" hideLabel value={message} onChange={(e) => setMessage(e.target.value)}
@@ -56,6 +56,6 @@ export function AdviceRequestSection() {
           ))}
         </ul>
       )}
-    </section>
+    </Card>
   );
 }
