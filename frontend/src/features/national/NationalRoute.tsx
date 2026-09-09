@@ -120,6 +120,25 @@ function NationalRoute() {
     <div className="flex flex-col gap-4">
       <HeroBanner subtitle="National view — quality, prices, and aggregation across districts." />
 
+      {!isError && (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Registered farmers" value={data?.national?.farmers_registered} icon="users" tone="leaf" />
+          <StatCard label="Active this season" value={data?.national?.farmers_active} icon="users" tone="sprout" />
+          <StatCard label="Districts reporting" value={data?.national?.districts_reporting} icon="grid" tone="sea" />
+          <StatCard
+            label="Average price"
+            value={data?.national?.avg_price_per_kg != null ? formatUgx(data.national.avg_price_per_kg) : "—"}
+            icon="tag"
+            tone="grain"
+            hint={
+              selectedCrop && data?.national
+                ? `${selectedCrop} · Grade 1 ${data.national.pct_grade1}%`
+                : selectedCrop
+            }
+          />
+        </div>
+      )}
+
       <div className="flex flex-wrap items-end gap-3">
         <Select label="Season" value={seasonId ?? ""} onChange={(e) => setSeasonId(Number(e.target.value))}>
           {ref?.seasons.map((s) => (
@@ -139,21 +158,6 @@ function NationalRoute() {
 
       {isLoading && <p className="text-soft">Loading…</p>}
       {isError && <EmptyState title="Could not load national figures. Please try again." />}
-
-      {data?.national && (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Registered farmers" value={data.national.farmers_registered} icon="users" tone="leaf" />
-          <StatCard label="Active this season" value={data.national.farmers_active} icon="users" tone="sprout" />
-          <StatCard label="Districts reporting" value={data.national.districts_reporting} icon="grid" tone="sea" />
-          <StatCard
-            label="Average price"
-            value={data.national.avg_price_per_kg != null ? formatUgx(data.national.avg_price_per_kg) : "—"}
-            icon="tag"
-            tone="grain"
-            hint={selectedCrop ? `${selectedCrop} · Grade 1 ${data.national.pct_grade1}%` : undefined}
-          />
-        </div>
-      )}
 
       <div className="grid gap-4 xl:grid-cols-12">
         <Card title="National overview" className="xl:col-span-5">
