@@ -21,7 +21,8 @@ class AdvisoryDelivery(TimeStampedModel):
     # Either seasonal content or a published trend insight — never neither
     # (see the constraint below). A trend delivery has no AdvisoryContent
     # row: it is a computed insight, not curated crop-week content.
-    content = models.ForeignKey(AdvisoryContent, null=True, blank=True, on_delete=models.PROTECT)
+    content = models.ForeignKey(
+        AdvisoryContent, null=True, blank=True, on_delete=models.PROTECT)
     trend = models.ForeignKey(
         "analytics.TrendInsight", null=True, blank=True, on_delete=models.SET_NULL, related_name="deliveries")
     farmer = models.ForeignKey(
@@ -40,7 +41,8 @@ class Post(TimeStampedModel):
     district or national) — a farmer sees a post if it targets their own
     parish, their district, or everyone."""
 
-    author = models.ForeignKey("accounts.SystemUser", on_delete=models.PROTECT, related_name="posts")
+    author = models.ForeignKey(
+        "accounts.SystemUser", on_delete=models.PROTECT, related_name="posts")
     scope_level = models.CharField(max_length=16, choices=ScopeLevel.choices)
     scope_id = models.PositiveIntegerField(null=True, blank=True)
     title = models.CharField(max_length=160)
@@ -48,23 +50,28 @@ class Post(TimeStampedModel):
 
 
 class Comment(TimeStampedModel):
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
-    author = models.ForeignKey("accounts.SystemUser", on_delete=models.PROTECT, related_name="comments")
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name="comments")
+    author = models.ForeignKey(
+        "accounts.SystemUser", on_delete=models.PROTECT, related_name="comments")
     body = models.TextField(max_length=1000)
 
 
 class AdvisoryRequest(TimeStampedModel):
-    """A farmer's question, routed to a shared queue: anyone with
-    operational authority over the farmer's parish (their agent, parish
-    chief, or an officer further up) can see and answer it — the same
-    parish_ids_for() rule as everything else, not a bespoke assignment."""
+    """A signed-in user's question, routed to the shared insight queue."""
 
-    farmer = models.ForeignKey("farmers.Farmer", on_delete=models.CASCADE, related_name="advisory_requests")
+    farmer = models.ForeignKey("farmers.Farmer", null=True, blank=True,
+                               on_delete=models.CASCADE, related_name="advisory_requests")
+    requester = models.ForeignKey("accounts.SystemUser", null=True, blank=True, on_delete=models.CASCADE,
+                                  related_name="advisory_requests_submitted")
     message = models.TextField(max_length=1000)
-    status = models.CharField(max_length=12, choices=[("open", "Open"), ("answered", "Answered")], default="open")
+    status = models.CharField(max_length=12, choices=[(
+        "open", "Open"), ("answered", "Answered")], default="open")
 
 
 class AdvisoryResponse(TimeStampedModel):
-    request = models.ForeignKey(AdvisoryRequest, on_delete=models.CASCADE, related_name="responses")
-    responder = models.ForeignKey("accounts.SystemUser", on_delete=models.PROTECT)
+    request = models.ForeignKey(
+        AdvisoryRequest, on_delete=models.CASCADE, related_name="responses")
+    responder = models.ForeignKey(
+        "accounts.SystemUser", on_delete=models.PROTECT)
     body = models.TextField(max_length=1000)

@@ -89,3 +89,21 @@ class Settlement(TimeStampedModel):
     net_amount = models.PositiveIntegerField()
     mm_reference = models.CharField(max_length=64, blank=True)
     paid_at = models.DateTimeField(null=True, blank=True)
+
+
+class MarketPrice(TimeStampedModel):
+    class Category(models.TextChoices):
+        PRODUCE = "produce", "Produce"
+        INPUT = "input", "Farm input"
+
+    item_name = models.CharField(max_length=120)
+    category = models.CharField(max_length=12, choices=Category.choices)
+    price = models.PositiveIntegerField()
+    unit = models.CharField(max_length=32)
+    market = models.CharField(max_length=120, blank=True)
+    price_date = models.DateField()
+    source = models.CharField(max_length=120, blank=True)
+
+    class Meta:
+        ordering = ["-price_date", "category", "item_name"]
+        indexes = [models.Index(fields=["price_date", "category"])]

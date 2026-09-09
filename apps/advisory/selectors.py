@@ -38,23 +38,8 @@ def advice_for(farmer, on=None):
 
 
 def posts_visible_to(user):
-    """Same shape as farmer_home()'s trend visibility: national + the
-    user's own district + the user's own parish, derived from
-    parish_ids_for() so it can never diverge from the one scoping rule."""
-    from apps.accounts.scoping import parish_ids_for
-    from apps.geo.models import Parish
-
-    if user.role == Role.NATIONAL_ADMIN:
-        return Post.objects.select_related("author").order_by("-created_at")
-
-    parish_ids = list(parish_ids_for(user))
-    district_ids = list(
-        Parish.objects.filter(id__in=parish_ids).values_list("subcounty__district_id", flat=True).distinct())
-    return Post.objects.filter(
-        Q(scope_level=ScopeLevel.NATIONAL)
-        | Q(scope_level=ScopeLevel.DISTRICT, scope_id__in=district_ids)
-        | Q(scope_level=ScopeLevel.PARISH, scope_id__in=parish_ids)
-    ).select_related("author").order_by("-created_at")
+    """All signed-in users can read the public announcement feed."""
+    return Post.objects.select_related("author").order_by("-created_at")
 
 
 def advisory_requests_visible_to(user):
@@ -66,8 +51,21 @@ def advisory_requests_visible_to(user):
         return AdvisoryRequest.objects.none()
     from apps.accounts.scoping import parish_ids_for
 
+    parish_ids = parish_ids_for(user)
+    from apps.geo.models import Parish
+
+    subcounty_ids = Parish.objects.filter(
+        id__in=parish_ids).values_list("subcounty_id", flat=True)
+    district_ids = Parish.objects.filter(id__in=parish_ids).values_list(
+        "subcounty__district_id", flat=True)
     return (
-        AdvisoryRequest.objects.filter(farmer__village__parish_id__in=parish_ids_for(user))
+        AdvisoryRequest.objects.filter(
+            Q(farmer__village__parish_id__in=parish_ids)
+            | Q(requester__scope_level=ScopeLevel.PARISH, requester__scope_id__in=parish_ids)
+            | Q(requester__scope_level=ScopeLevel.SUBCOUNTY, requester__scope_id__in=subcounty_ids)
+            | Q(requester__scope_level=ScopeLevel.DISTRICT, requester__scope_id__in=district_ids)
+            | Q(requester__role=Role.NATIONAL_ADMIN)
+        )
         .select_related("farmer", "farmer__village__parish")
         .order_by("-created_at")
     )

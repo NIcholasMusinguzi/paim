@@ -17,12 +17,12 @@ export type NavItem = {
 
 const OFFICER_NAV: NavItem[] = [
   { label: "Dashboard", to: "/national", icon: "grid", match: "exact" },
-  { label: "Farmers", to: "/national/admin", icon: "users", match: "prefix" },
+  { label: "Farmers", to: "/national/farmers", icon: "users", match: "prefix" },
   { label: "Advisories", to: "/parish", icon: "megaphone", match: "prefix" },
   { label: "Weather", to: "/national#weather", icon: "cloud", match: "exact" },
   { label: "Market Prices", to: "/national#prices", icon: "chart", match: "exact" },
   { label: "Bulk Sales", to: "/parish", icon: "truck", match: "prefix" },
-  { label: "Reports", to: "/national/trends", icon: "file", match: "prefix" },
+  { label: "Reports", to: "/national/reports", icon: "file", match: "prefix" },
   { label: "Settings", to: "/national/admin", icon: "gear", match: "prefix" },
 ];
 
@@ -32,6 +32,7 @@ const PARISH_NAV: NavItem[] = [
   { label: "Weather", to: "/parish#weather", icon: "cloud", match: "prefix" },
   { label: "Market Prices", to: "/parish#prices", icon: "chart", match: "prefix" },
   { label: "Bulk Sales", to: "/parish#sales", icon: "truck", match: "prefix" },
+  { label: "Reports", to: "/parish/reports", icon: "file", match: "prefix" },
 ];
 
 const FARMER_NAV: NavItem[] = [{ label: "Home", to: "/farmer", icon: "home", match: "prefix" }];

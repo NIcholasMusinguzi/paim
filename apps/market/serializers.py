@@ -26,7 +26,8 @@ class DashboardDeclarationSerializer(serializers.Serializer):
     farmer_name = serializers.CharField(source="farmer.full_name")
     bags = serializers.IntegerField()
     grade = serializers.CharField()
-    moisture_pct = serializers.DecimalField(max_digits=4, decimal_places=1, allow_null=True)
+    moisture_pct = serializers.DecimalField(
+        max_digits=4, decimal_places=1, allow_null=True)
     created_at = serializers.DateTimeField()
 
 
@@ -92,3 +93,25 @@ class BidInputSerializer(serializers.Serializer):
 class AwardInputSerializer(serializers.Serializer):
     bid_id = serializers.IntegerField()
     committee_minute_ref = serializers.CharField(max_length=120)
+
+
+class MarketPriceSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    item_name = serializers.CharField()
+    category = serializers.CharField()
+    price = serializers.IntegerField()
+    unit = serializers.CharField()
+    market = serializers.CharField()
+    price_date = serializers.DateField()
+    source = serializers.CharField()
+
+
+class MarketPriceSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    item_name = serializers.CharField()
+    category = serializers.CharField()
+    price = serializers.IntegerField()
+    unit = serializers.CharField()
+    market = serializers.CharField()
+    price_date = serializers.DateField()
+    source = serializers.CharField()

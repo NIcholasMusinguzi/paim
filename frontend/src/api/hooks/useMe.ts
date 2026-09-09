@@ -4,7 +4,7 @@ import { qk } from "../../app/queryClient";
 import { api } from "../client";
 import type { components } from "../schema";
 
-export type Me = components["schemas"]["Me"];
+export type Me = components["schemas"]["Me"] & { phone: string };
 type LoginBody = components["schemas"]["Login"];
 type SignupBody = components["schemas"]["Signup"];
 export type VillageOption = components["schemas"]["VillageList"];
@@ -46,5 +46,13 @@ export function useLogout() {
   return useMutation({
     mutationFn: () => api<void>("/auth/logout/", { method: "POST" }),
     onSuccess: () => qc.setQueryData(qk.me, null),
+  });
+}
+
+export function useUpdateMe() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { full_name: string; phone: string }) => api<Me>("/me/", { method: "PATCH", body: JSON.stringify(body) }),
+    onSuccess: (me) => qc.setQueryData(qk.me, me),
   });
 }

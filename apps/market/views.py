@@ -1,4 +1,5 @@
 from drf_spectacular.utils import extend_schema
+from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
@@ -10,13 +11,14 @@ from apps.accounts.models import Role
 from apps.accounts.permissions import IsOfficer
 from apps.accounts.scoping import parish_ids_for
 from apps.geo.models import Parish
-from apps.market.models import Bid, Buyer, Lot
+from apps.market.models import Bid, Buyer, Lot, MarketPrice
 from apps.market.selectors import open_lots, parish_dashboard_data
 from apps.market.serializers import (
     AwardInputSerializer,
     BidInputSerializer,
     BuyerLotSerializer,
     LotDetailSerializer,
+    MarketPriceSerializer,
     ParishDashboardSerializer,
 )
 from apps.market.services import DomainError, award_lot, submit_bid
@@ -35,6 +37,15 @@ class HealthView(APIView):
         return Response({"status": "ok"})
 
 
+class DailyMarketPriceView(APIView):
+    @extend_schema(responses={200: MarketPriceSerializer(many=True)})
+    def get(self, request):
+        price_date = request.query_params.get("date", timezone.localdate())
+        prices = MarketPrice.objects.filter(
+            price_date=price_date).order_by("category", "item_name")
+        return Response(MarketPriceSerializer(prices, many=True).data)
+
+
 class ParishDashboardView(APIView):
     # parish_ids_for() alone is not enough: a farmer's own account also
     # resolves to their parish (it needs a scope for /farmer/home/), but
@@ -47,7 +58,8 @@ class ParishDashboardView(APIView):
         # — one rule, both transports, so they can never diverge.
         if not parish_ids_for(request.user).filter(id=parish_id).exists():
             raise PermissionDenied("You do not have access to this parish.")
-        parish = get_object_or_404(Parish.objects.select_related("subcounty__district"), pk=parish_id)
+        parish = get_object_or_404(Parish.objects.select_related(
+            "subcounty__district"), pk=parish_id)
         return Response(ParishDashboardSerializer(parish_dashboard_data(parish)).data)
 
 
@@ -73,7 +85,8 @@ class BuyerLotListView(APIView):
 class LotDetailView(APIView):
     @extend_schema(responses={200: LotDetailSerializer})
     def get(self, request, lot_id):
-        lot = get_object_or_404(Lot.objects.select_related("parish", "crop"), pk=lot_id)
+        lot = get_object_or_404(
+            Lot.objects.select_related("parish", "crop"), pk=lot_id)
         if not _may_view_lot(request.user, lot):
             raise PermissionDenied("You do not have access to this lot.")
         return Response(LotDetailSerializer(lot, context={"viewer": request.user}).data)
@@ -114,7 +127,7 @@ class AwardView(APIView):
         data.is_valid(raise_exception=True)
         try:
             award_lot(lot_id=lot.id, bid_id=data.validated_data["bid_id"], actor=request.user,
-                     minute_ref=data.validated_data["committee_minute_ref"])
+                      minute_ref=data.validated_data["committee_minute_ref"])
         except (DomainError, Bid.DoesNotExist) as e:
             return Response({"detail": str(e)}, status=status.HTTP_409_CONFLICT)
         lot.refresh_from_db()

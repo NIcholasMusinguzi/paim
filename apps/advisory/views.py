@@ -69,7 +69,8 @@ class PostCommentsView(APIView):
         post = self._visible_post(request.user, post_id)
         data = CommentSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        comment = add_comment(post=post, author=request.user, body=data.validated_data["body"])
+        comment = add_comment(post=post, author=request.user,
+                              body=data.validated_data["body"])
         return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
 
 
@@ -80,7 +81,8 @@ class AdvisoryRequestQueueView(APIView):
     @extend_schema(responses={200: AdvisoryRequestSerializer(many=True)})
     def get(self, request):
         if request.user.role not in OFFICER_ROLES:
-            raise PermissionDenied("Only an officer may view the advisory request queue.")
+            raise PermissionDenied(
+                "Only an officer may view the advisory request queue.")
         return Response(AdvisoryRequestSerializer(advisory_requests_visible_to(request.user), many=True).data)
 
 
@@ -91,19 +93,18 @@ class MyAdvisoryRequestsView(APIView):
     @extend_schema(responses={200: AdvisoryRequestSerializer(many=True)})
     def get(self, request):
         farmer = getattr(request.user, "farmer_profile", None)
-        if farmer is None:
-            raise PermissionDenied("Only a farmer may view their own advisory requests.")
         return Response(AdvisoryRequestSerializer(
-            farmer.advisory_requests.order_by("-created_at"), many=True).data)
+            AdvisoryRequest.objects.filter(requester=request.user).select_related(
+                "farmer", "farmer__village__parish")
+            .prefetch_related("responses__responder").order_by("-created_at"), many=True).data)
 
     @extend_schema(request=AdvisoryRequestCreateSerializer, responses={201: AdvisoryRequestSerializer})
     def post(self, request):
         farmer = getattr(request.user, "farmer_profile", None)
-        if farmer is None:
-            raise PermissionDenied("Only a farmer may submit an advisory request.")
         data = AdvisoryRequestCreateSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        advisory_request = submit_advisory_request(farmer=farmer, **data.validated_data)
+        advisory_request = submit_advisory_request(
+            requester=request.user, farmer=farmer, **data.validated_data)
         return Response(AdvisoryRequestSerializer(advisory_request).data, status=status.HTTP_201_CREATED)
 
 
@@ -114,7 +115,8 @@ class AdvisoryRequestRespondView(APIView):
         data = AdvisoryResponseSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         try:
-            respond_to_request(advisory_request=advisory_request, responder=request.user, **data.validated_data)
+            respond_to_request(advisory_request=advisory_request,
+                               responder=request.user, **data.validated_data)
         except AdvisoryRequestError as e:
             return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
         advisory_request.refresh_from_db()

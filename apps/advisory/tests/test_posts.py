@@ -12,8 +12,10 @@ def world(db):
     kyampisi = Subcounty.objects.create(district=mukono, name="Kyampisi")
     katosi = Parish.objects.create(subcounty=kyampisi, name="Katosi")
     other_parish = Parish.objects.create(subcounty=kyampisi, name="Elsewhere")
-    wakiso_subcounty = Subcounty.objects.create(district=wakiso, name="Nabweru")
-    wakiso_parish = Parish.objects.create(subcounty=wakiso_subcounty, name="Kazo")
+    wakiso_subcounty = Subcounty.objects.create(
+        district=wakiso, name="Nabweru")
+    wakiso_parish = Parish.objects.create(
+        subcounty=wakiso_subcounty, name="Kazo")
     village = Village.objects.create(parish=katosi, name="Kigunga")
 
     chief = SystemUser.objects.create_user(
@@ -44,7 +46,8 @@ def world(db):
 
 def _client(user):
     client = APIClient()
-    client.post("/api/v1/auth/login/", {"phone": user.phone, "password": "pin1234"}, format="json")
+    client.post("/api/v1/auth/login/",
+                {"phone": user.phone, "password": "pin1234"}, format="json")
     return client
 
 
@@ -94,10 +97,10 @@ def test_farmer_cannot_post(world):
 
 
 @pytest.mark.django_db
-def test_farmer_sees_their_parish_and_district_and_national_posts_only(world):
+def test_farmer_sees_all_public_posts(world):
     client = _client(world["chief"])
     client.post("/api/v1/posts/", {"scope_level": "parish", "scope_id": world["katosi"].id,
-                                    "title": "Parish post", "body": "b"}, format="json")
+                                   "title": "Parish post", "body": "b"}, format="json")
     _client(world["district_officer"]).post("/api/v1/posts/", {
         "scope_level": "district", "scope_id": world["mukono"].id,
         "title": "District post", "body": "b"}, format="json")
@@ -109,7 +112,8 @@ def test_farmer_sees_their_parish_and_district_and_national_posts_only(world):
 
     res = _client(world["farmer_user"]).get("/api/v1/posts/")
     titles = {p["title"] for p in res.data}
-    assert titles == {"Parish post", "District post", "National post"}
+    assert titles == {"Parish post", "District post",
+                      "National post", "Other parish post"}
 
 
 @pytest.mark.django_db
@@ -120,7 +124,8 @@ def test_any_signed_in_user_can_comment_on_a_visible_post(world):
     }, format="json").data
 
     farmer_client = _client(world["farmer_user"])
-    comment = farmer_client.post(f"/api/v1/posts/{post['id']}/comments/", {"body": "What time?"}, format="json")
+    comment = farmer_client.post(
+        f"/api/v1/posts/{post['id']}/comments/", {"body": "What time?"}, format="json")
     assert comment.status_code == 201
     assert comment.data["author_name"] == "Grace Nabirye"
 
@@ -129,10 +134,11 @@ def test_any_signed_in_user_can_comment_on_a_visible_post(world):
 
 
 @pytest.mark.django_db
-def test_cannot_comment_on_a_post_outside_your_scope(world):
+def test_can_comment_on_any_public_post(world):
     post = _client(world["other_chief"]).post("/api/v1/posts/", {
         "scope_level": "parish", "scope_id": world["wakiso_parish"].id, "title": "x", "body": "y",
     }, format="json").data
 
-    res = _client(world["farmer_user"]).post(f"/api/v1/posts/{post['id']}/comments/", {"body": "hi"}, format="json")
-    assert res.status_code == 404
+    res = _client(world["farmer_user"]).post(
+        f"/api/v1/posts/{post['id']}/comments/", {"body": "hi"}, format="json")
+    assert res.status_code == 201

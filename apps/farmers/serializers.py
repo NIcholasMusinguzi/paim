@@ -75,3 +75,22 @@ class CropSerializer(serializers.Serializer):
 class ReferenceDataSerializer(serializers.Serializer):
     seasons = SeasonSerializer(many=True)
     crops = CropSerializer(many=True)
+
+
+class FarmerProfileSerializer(serializers.Serializer):
+    full_name = serializers.CharField(max_length=120, required=False)
+    phone = serializers.CharField(
+        max_length=20, allow_blank=True, required=False)
+    sex = serializers.ChoiceField(choices=["F", "M"], required=False)
+    language = serializers.CharField(max_length=16, required=False)
+    area_acres = serializers.DecimalField(
+        max_digits=5, decimal_places=2, required=False)
+    crop_id = serializers.IntegerField(required=False)
+    planting_date = serializers.DateField(required=False)
+
+
+class FarmerDeclarationSerializer(serializers.Serializer):
+    crop_id = serializers.IntegerField()
+    bags = serializers.IntegerField(min_value=1, max_value=200)
+    moisture_pct = serializers.DecimalField(
+        max_digits=4, decimal_places=1, required=False, allow_null=True)

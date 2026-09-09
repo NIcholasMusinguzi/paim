@@ -3,6 +3,7 @@ import * as Tabs from "@radix-ui/react-tabs";
 import { Card } from "../../../design/ui/Card";
 
 import { BuyersPanel } from "./BuyersPanel";
+import { MarketPricesPanel } from "./MarketPricesPanel";
 import { CropsPanel } from "./CropsPanel";
 import { DistrictsPanel } from "./DistrictsPanel";
 import { FarmersPanel } from "./FarmersPanel";
@@ -22,6 +23,7 @@ const TABS = [
   { value: "crops", label: "Crops", Panel: CropsPanel },
   { value: "seasons", label: "Seasons", Panel: SeasonsPanel },
   { value: "buyers", label: "Buyers", Panel: BuyersPanel },
+  { value: "prices", label: "Market prices", Panel: MarketPricesPanel },
 ];
 
 function AdminRoute() {

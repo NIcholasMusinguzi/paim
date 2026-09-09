@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 
 from apps.accounts import services
-from apps.accounts.serializers import LoginSerializer, MeSerializer, SignupSerializer
+from apps.accounts.serializers import LoginSerializer, MeSerializer, MeUpdateSerializer, SignupSerializer
 from apps.farmers.services import SignupError, sign_up_farmer
 from apps.geo.models import Village
 
@@ -24,7 +24,7 @@ class LoginView(APIView):
             user = services.authenticate_user(**data.validated_data)
         except services.InvalidCredentials:
             return Response({"detail": "Incorrect phone number or password."},
-                             status=status.HTTP_401_UNAUTHORIZED)
+                            status=status.HTTP_401_UNAUTHORIZED)
         access, refresh = services.issue_tokens(user)
         response = Response(MeSerializer(user).data)
         services.set_auth_cookies(response, access, refresh)
@@ -72,7 +72,8 @@ class RefreshView(APIView):
         try:
             access, refresh = services.rotate_access_token(raw_refresh)
         except TokenError:
-            response = Response({"detail": "Session expired."}, status=status.HTTP_401_UNAUTHORIZED)
+            response = Response({"detail": "Session expired."},
+                                status=status.HTTP_401_UNAUTHORIZED)
             services.clear_auth_cookies(response)
             return response
         response = Response(status=status.HTTP_204_NO_CONTENT)
@@ -96,4 +97,15 @@ class MeView(APIView):
 
     @extend_schema(responses={200: MeSerializer})
     def get(self, request):
+        return Response(MeSerializer(request.user).data)
+
+    @extend_schema(request=MeUpdateSerializer, responses={200: MeSerializer})
+    def patch(self, request):
+        data = MeUpdateSerializer(data=request.data, partial=True)
+        data.is_valid(raise_exception=True)
+        for field, value in data.validated_data.items():
+            setattr(request.user, field, value)
+        if data.validated_data:
+            request.user.save(
+                update_fields=[*data.validated_data, "updated_at"])
         return Response(MeSerializer(request.user).data)

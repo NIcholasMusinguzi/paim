@@ -44,21 +44,27 @@ class AdvisoryRequestError(Exception):
     pass
 
 
-def submit_advisory_request(*, farmer, message) -> AdvisoryRequest:
-    return AdvisoryRequest.objects.create(farmer=farmer, message=message)
+def submit_advisory_request(*, requester, message, farmer=None) -> AdvisoryRequest:
+    return AdvisoryRequest.objects.create(requester=requester, farmer=farmer, message=message)
 
 
 def respond_to_request(*, advisory_request, responder, body) -> AdvisoryResponse:
     from apps.accounts.permissions import OFFICER_ROLES
     from apps.accounts.scoping import parish_ids_for
 
-    has_authority = (
-        responder.role in OFFICER_ROLES
+    requester_parishes = parish_ids_for(
+        advisory_request.requester) if advisory_request.requester_id else None
+    has_authority = responder.role in OFFICER_ROLES and (
+        advisory_request.farmer_id
         and parish_ids_for(responder).filter(id=advisory_request.farmer.village.parish_id).exists()
+        or requester_parishes is not None
+        and parish_ids_for(responder).filter(id__in=requester_parishes).exists()
     )
     if not has_authority:
-        raise AdvisoryRequestError("You do not have authority over this farmer's parish.")
-    response = AdvisoryResponse.objects.create(request=advisory_request, responder=responder, body=body)
+        raise AdvisoryRequestError(
+            "You do not have authority over this farmer's parish.")
+    response = AdvisoryResponse.objects.create(
+        request=advisory_request, responder=responder, body=body)
     advisory_request.status = "answered"
     advisory_request.save(update_fields=["status", "updated_at"])
     return response

@@ -26,6 +26,7 @@ class ScopeSerializer(serializers.Serializer):
 class MeSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     full_name = serializers.CharField()
+    phone = serializers.CharField()
     role = serializers.CharField()
     scope_level = serializers.CharField()
     scope = serializers.SerializerMethodField()
@@ -38,3 +39,8 @@ class MeSerializer(serializers.Serializer):
     @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_permissions(self, user):
         return permissions_for(user)
+
+
+class MeUpdateSerializer(serializers.Serializer):
+    full_name = serializers.CharField(max_length=120, required=False)
+    phone = serializers.CharField(max_length=20, required=False)

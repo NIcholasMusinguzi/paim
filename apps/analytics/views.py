@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import Role
+from apps.accounts.scoping import parish_ids_for
 from apps.analytics.models import (
     DistrictSeasonMetric,
     NationalSeasonMetric,
@@ -27,6 +28,13 @@ class IsDistrictOrNationalAdmin(BasePermission):
                     and request.user.role in (Role.DISTRICT_OFFICER, Role.NATIONAL_ADMIN))
 
 
+class IsScopedReportUser(BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated
+                    and request.user.role in (Role.PARISH_CHIEF, Role.SUBCOUNTY_OFFICER,
+                                              Role.DISTRICT_OFFICER, Role.NATIONAL_ADMIN))
+
+
 def _season_and_crop(request) -> tuple[str, str]:
     season_id = request.query_params.get("season")
     crop_id = request.query_params.get("crop")
@@ -42,11 +50,13 @@ class NationalMetricsView(APIView):
     def get(self, request):
         season_id, crop_id = _season_and_crop(request)
         districts = (
-            DistrictSeasonMetric.objects.filter(season_id=season_id, crop_id=crop_id)
+            DistrictSeasonMetric.objects.filter(
+                season_id=season_id, crop_id=crop_id)
             .select_related("district").order_by("rank_national")
         )
         national = (
-            NationalSeasonMetric.objects.filter(season_id=season_id, crop_id=crop_id).first()
+            NationalSeasonMetric.objects.filter(
+                season_id=season_id, crop_id=crop_id).first()
         )
         return Response(NationalMetricsResponseSerializer({"districts": districts, "national": national}).data)
 
@@ -62,6 +72,18 @@ class DistrictParishesView(APIView):
                 parish__subcounty__district_id=district_id, season_id=season_id, crop_id=crop_id)
             .select_related("parish").order_by("-pct_grade1")
         )
+        return Response(ParishMetricSerializer(rows, many=True).data)
+
+
+class ScopedReportView(APIView):
+    permission_classes = [IsScopedReportUser]
+
+    @extend_schema(responses={200: ParishMetricSerializer(many=True)})
+    def get(self, request):
+        season_id, crop_id = _season_and_crop(request)
+        rows = ParishSeasonMetric.objects.filter(
+            parish_id__in=parish_ids_for(request.user), season_id=season_id, crop_id=crop_id,
+        ).select_related("parish").order_by("parish__name")
         return Response(ParishMetricSerializer(rows, many=True).data)
 
 
@@ -90,7 +112,8 @@ class TrendApproveView(APIView):
     def post(self, request, insight_id):
         get_object_or_404(TrendInsight, pk=insight_id)
         try:
-            insight = approve_insight(insight_id=insight_id, actor=request.user)
+            insight = approve_insight(
+                insight_id=insight_id, actor=request.user)
         except TrendApprovalError as e:
             return Response({"detail": str(e)}, status=status.HTTP_409_CONFLICT)
         return Response(TrendInsightSerializer(insight).data)

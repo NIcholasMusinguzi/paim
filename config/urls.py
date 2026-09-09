@@ -6,7 +6,7 @@ from rest_framework.routers import DefaultRouter
 from apps.accounts.admin_viewsets import SystemUserViewSet
 from apps.farmers.admin_viewsets import CropViewSet, FarmerViewSet, SeasonViewSet
 from apps.geo.admin_viewsets import DistrictViewSet, ParishViewSet, SubcountyViewSet, VillageViewSet
-from apps.market.admin_viewsets import BuyerViewSet
+from apps.market.admin_viewsets import BidViewSet, BuyerViewSet, MarketPriceViewSet
 from apps.market.views import HealthView
 
 # The admin configuration API: geography, crops, seasons, users and buyers.
@@ -22,6 +22,8 @@ admin_router.register("farmers", FarmerViewSet)
 admin_router.register("crops", CropViewSet)
 admin_router.register("seasons", SeasonViewSet)
 admin_router.register("buyers", BuyerViewSet)
+admin_router.register("bids", BidViewSet)
+admin_router.register("market-prices", MarketPriceViewSet)
 admin_router.register("users", SystemUserViewSet)
 
 urlpatterns = [
