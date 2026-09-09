@@ -18,7 +18,7 @@ type Price = {
   source: string;
 };
 type Draft = Omit<Price, "id" | "price"> & { price: string };
-const EMPTY = {
+const EMPTY: Draft = {
   item_name: "",
   category: "produce",
   price: "",
