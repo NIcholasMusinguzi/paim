@@ -2,6 +2,7 @@ import { type FormEvent, useState } from "react";
 
 import { useAdvisoryQueue, useRespondToRequest } from "../../api/hooks/useAdvisoryRequests";
 import { Button } from "../../design/ui/Button";
+import { Card } from "../../design/ui/Card";
 import { EmptyState } from "../../design/ui/EmptyState";
 import { Field } from "../../design/ui/Field";
 import { Pill } from "../../design/ui/Pill";
@@ -31,8 +32,7 @@ export function AdvisoryQueueSection() {
   const { data: requests, isLoading } = useAdvisoryQueue();
 
   return (
-    <section className="flex flex-col gap-3 rounded-lg bg-panel p-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-soft">Advisory requests</h2>
+    <Card title="Advisory requests">
       {isLoading ? (
         <p className="text-soft">Loading…</p>
       ) : !requests || requests.length === 0 ? (
@@ -55,6 +55,6 @@ export function AdvisoryQueueSection() {
           </div>
         ))
       )}
-    </section>
+    </Card>
   );
 }

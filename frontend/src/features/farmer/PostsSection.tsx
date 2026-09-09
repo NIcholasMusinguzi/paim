@@ -2,6 +2,7 @@ import { type FormEvent, useState } from "react";
 
 import { useAddComment, useComments, usePosts } from "../../api/hooks/usePosts";
 import { Button } from "../../design/ui/Button";
+import { Card } from "../../design/ui/Card";
 import { EmptyState } from "../../design/ui/EmptyState";
 import { Field } from "../../design/ui/Field";
 
@@ -39,8 +40,7 @@ export function PostsSection() {
   const [openId, setOpenId] = useState<number | null>(null);
 
   return (
-    <section className="flex flex-col gap-3 rounded-lg bg-panel p-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-soft">From your officers</h2>
+    <Card title="From your officers">
       {isLoading ? (
         <p className="text-soft">Loading…</p>
       ) : !posts || posts.length === 0 ? (
@@ -50,13 +50,13 @@ export function PostsSection() {
           <div key={p.id} className="border-t border-rule pt-3 first:border-0 first:pt-0">
             <p className="text-sm font-medium text-ink">{p.title}</p>
             <p className="text-sm text-ink">{p.body}</p>
-            <button onClick={() => setOpenId(openId === p.id ? null : p.id)} className="mt-1 text-xs text-sea underline">
+            <button onClick={() => setOpenId(openId === p.id ? null : p.id)} className="mt-1 text-xs font-medium text-leaf">
               {p.comment_count} comment{p.comment_count === 1 ? "" : "s"}
             </button>
             {openId === p.id && <CommentThread postId={p.id} />}
           </div>
         ))
       )}
-    </section>
+    </Card>
   );
 }

@@ -13,7 +13,7 @@ export const Select = forwardRef<HTMLSelectElement, Props>(({ label, id, classNa
       <select
         ref={ref}
         id={fieldId}
-        className={`min-h-11 rounded border border-rule bg-panel px-3 py-2 text-ink outline-none focus:border-sea ${className}`}
+        className={`min-h-11 rounded-lg border border-rule bg-panel px-3 py-2 text-ink outline-none focus:border-leaf ${className}`}
         {...props}
       >
         {children}

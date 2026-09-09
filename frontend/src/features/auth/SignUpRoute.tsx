@@ -27,8 +27,8 @@ function SignUpRoute() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-6">
-      <form onSubmit={onSubmit} className="flex w-full max-w-sm flex-col gap-4 rounded-lg bg-panel p-6 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center bg-page p-6">
+      <form onSubmit={onSubmit} className="flex w-full max-w-sm flex-col gap-4 rounded-2xl bg-panel p-8 shadow-[var(--shadow-card)]">
         <h1 className="text-lg font-semibold text-ink">Register as a farmer</h1>
         <Field label="Full name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
         <Field label="Phone number" type="tel" autoComplete="tel" required value={phone}
@@ -58,7 +58,7 @@ function SignUpRoute() {
         </Button>
         <p className="text-center text-sm text-soft">
           Already registered?{" "}
-          <Link to="/sign-in" className="text-sea underline">
+          <Link to="/sign-in" className="font-medium text-leaf">
             Sign in
           </Link>
         </p>

@@ -1,5 +1,7 @@
 import * as Tabs from "@radix-ui/react-tabs";
 
+import { Card } from "../../../design/ui/Card";
+
 import { BuyersPanel } from "./BuyersPanel";
 import { CropsPanel } from "./CropsPanel";
 import { DistrictsPanel } from "./DistrictsPanel";
@@ -24,15 +26,14 @@ const TABS = [
 
 function AdminRoute() {
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-4 p-4">
-      <h1 className="text-lg font-semibold text-ink">Configuration</h1>
+    <Card title="Configuration">
       <Tabs.Root defaultValue="users">
-        <Tabs.List className="flex flex-wrap gap-1 border-b border-rule">
+        <Tabs.List className="mb-2 flex flex-wrap gap-1 border-b border-rule">
           {TABS.map((t) => (
             <Tabs.Trigger
               key={t.value}
               value={t.value}
-              className="rounded-t px-3 py-2 text-sm text-soft outline-none data-[state=active]:border-b-2 data-[state=active]:border-sea data-[state=active]:font-medium data-[state=active]:text-ink"
+              className="rounded-t px-3 py-2 text-sm text-soft outline-none data-[state=active]:border-b-2 data-[state=active]:border-leaf data-[state=active]:font-medium data-[state=active]:text-ink"
             >
               {t.label}
             </Tabs.Trigger>
@@ -44,7 +45,7 @@ function AdminRoute() {
           </Tabs.Content>
         ))}
       </Tabs.Root>
-    </div>
+    </Card>
   );
 }
 

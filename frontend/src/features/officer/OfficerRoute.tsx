@@ -2,11 +2,17 @@ import { useEffect, useState } from "react";
 
 import { ApiError } from "../../api/client";
 import { useAuth } from "../../app/AuthProvider";
+import { formatUgx } from "../../design/format";
+import { Card } from "../../design/ui/Card";
 import { EmptyState } from "../../design/ui/EmptyState";
+import { HeroBanner } from "../../design/ui/HeroBanner";
 import { LiveBadge } from "../../design/ui/LiveBadge";
 import { Meter } from "../../design/ui/Meter";
 import { Pill } from "../../design/ui/Pill";
+import { QuickActions } from "../../design/ui/QuickActions";
 import { Select } from "../../design/ui/Select";
+import { StatCard } from "../../design/ui/StatCard";
+import { WeatherCard } from "../../design/ui/WeatherCard";
 import { useLiveChannel } from "../../realtime/useLiveChannel";
 import { AdvisoryQueueSection } from "./AdvisoryQueueSection";
 import { PostsSection } from "./PostComposer";
@@ -27,7 +33,13 @@ function ParishPicker({ value, onChange }: { value: number | null; onChange: (id
 
   if (isLoading) return null;
   if (!parishes || parishes.length === 0) return <EmptyState title="No parishes in your scope." />;
-  if (parishes.length === 1) return <h1 className="text-lg font-semibold text-ink">{parishes[0].name}</h1>;
+  if (parishes.length === 1) {
+    return (
+      <p className="text-sm font-medium text-ink">
+        {parishes[0].name} · {parishes[0].district}
+      </p>
+    );
+  }
 
   return (
     <Select label="Parish" value={value ?? ""} onChange={(e) => onChange(Number(e.target.value))}>
@@ -44,7 +56,7 @@ function Dashboard({ parishId }: { parishId: number }) {
   const { data, isLoading, isError, error } = useParishDashboard(parishId);
   const { status, lastEventAt } = useLiveChannel(parishId);
 
-  if (isLoading) return <div className="p-4 text-soft">Loading…</div>;
+  if (isLoading) return <div className="text-soft">Loading…</div>;
   if (isError) {
     return <EmptyState title={error instanceof ApiError ? error.detail : "Something went wrong. Please try again."} />;
   }
@@ -52,42 +64,84 @@ function Dashboard({ parishId }: { parishId: number }) {
   const dash = data!;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <LiveBadge status={status} lastEventAt={lastEventAt} computedAt={dash.metrics?.computed_at} />
 
-      {dash.lot ? (
-        <section className="flex flex-col gap-3 rounded-lg bg-panel p-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-soft">{dash.lot.crop} lot</h2>
-            <Pill tone="grain">{dash.lot.status}</Pill>
-          </div>
-          <Meter value={dash.lot.bags} target={dash.lot.min_bags} label={`${dash.lot.crop} lot`} />
-        </section>
-      ) : (
-        <EmptyState title={`${dash.parish.name} has not opened a lot this season. Your agent opens it when the first farmer is ready to sell.`} />
-      )}
-
       {dash.metrics && (
-        <section className="grid grid-cols-3 gap-3 rounded-lg bg-panel p-4 text-center">
-          <div>
-            <p className="tabular text-figure text-ink">{dash.metrics.pct_grade1}%</p>
-            <p className="text-xs text-soft">Grade 1</p>
-          </div>
-          <div>
-            <p className="tabular text-figure text-ink">{dash.metrics.farmers_active}</p>
-            <p className="text-xs text-soft">Active farmers</p>
-          </div>
-          <div>
-            <p className="tabular text-figure text-ink">
-              {dash.metrics.avg_price_per_kg != null ? `${dash.metrics.avg_price_per_kg}` : "—"}
-            </p>
-            <p className="text-xs text-soft">UGX/kg</p>
-          </div>
-        </section>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Active farmers" value={dash.metrics.farmers_active} icon="users" tone="leaf" />
+          <StatCard label="Bags declared" value={dash.metrics.bags_declared} icon="truck" tone="sprout" />
+          <StatCard label="Grade 1" value={`${dash.metrics.pct_grade1}%`} icon="grid" tone="sea" />
+          <StatCard
+            label="Average price"
+            value={dash.metrics.avg_price_per_kg != null ? formatUgx(dash.metrics.avg_price_per_kg) : "—"}
+            icon="tag"
+            tone="grain"
+          />
+        </div>
       )}
 
-      <section className="flex flex-col gap-3 rounded-lg bg-panel p-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-soft">Declarations</h2>
+      <div className="grid gap-4 xl:grid-cols-12">
+        <Card title="Parish overview" className="xl:col-span-5">
+          <dl className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <dt className="text-xs text-soft">Parish</dt>
+              <dd className="font-semibold text-ink">{dash.parish.name}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-soft">District</dt>
+              <dd className="font-semibold text-ink">{dash.parish.district}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-soft">Farmers active</dt>
+              <dd className="tabular font-semibold text-ink">{dash.metrics?.farmers_active ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-soft">Top crop</dt>
+              <dd className="font-semibold text-ink">{dash.lot?.crop ?? "—"}</dd>
+            </div>
+          </dl>
+        </Card>
+
+        <Card id="sales" title="Harvest aggregation & sales" className="xl:col-span-4">
+          {dash.lot ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-medium text-ink">{dash.lot.crop} lot</h3>
+                <Pill tone="grain">{dash.lot.status}</Pill>
+              </div>
+              <Meter value={dash.lot.bags} target={dash.lot.min_bags} label={`${dash.lot.crop} lot`} />
+              <p className="text-xs text-soft">
+                Next bulk sale opens when the lot reaches {dash.lot.min_bags} bags.
+              </p>
+            </div>
+          ) : (
+            <EmptyState title={`${dash.parish.name} has not opened a lot this season. Your agent opens it when the first farmer is ready to sell.`} />
+          )}
+        </Card>
+
+        <div className="xl:col-span-3">
+          <WeatherCard place={`${dash.parish.name} parish`} />
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-12">
+        <div id="advisories" className="lg:col-span-7">
+          <AdvisoryQueueSection />
+        </div>
+        <Card id="prices" title="Current market prices" className="lg:col-span-5">
+          {dash.metrics?.avg_price_per_kg != null && dash.lot ? (
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium text-ink">{dash.lot.crop}</span>
+              <span className="tabular text-ink">{formatUgx(dash.metrics.avg_price_per_kg)}/kg</span>
+            </div>
+          ) : (
+            <EmptyState title="No settled price for this parish yet." />
+          )}
+        </Card>
+      </div>
+
+      <Card title="Declarations">
         {dash.declarations.length === 0 ? (
           <EmptyState title="No declarations for this lot yet." />
         ) : (
@@ -95,17 +149,17 @@ function Dashboard({ parishId }: { parishId: number }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-rule text-left text-xs text-soft">
-                  <th className="py-1 font-medium">Farmer</th>
-                  <th className="py-1 font-medium">Bags</th>
-                  <th className="py-1 font-medium">Grade</th>
+                  <th className="py-2 font-medium">Farmer</th>
+                  <th className="py-2 font-medium">Bags</th>
+                  <th className="py-2 font-medium">Grade</th>
                 </tr>
               </thead>
               <tbody>
                 {dash.declarations.map((d) => (
                   <tr key={d.id} className="border-b border-rule last:border-0">
-                    <td className="py-1.5 text-ink">{d.farmer_name}</td>
-                    <td className="tabular py-1.5 text-ink">{d.bags}</td>
-                    <td className="py-1.5">
+                    <td className="py-2.5 text-ink">{d.farmer_name}</td>
+                    <td className="tabular py-2.5 text-ink">{d.bags}</td>
+                    <td className="py-2.5">
                       <Pill tone={tone(GRADE_TONE, d.grade, "soft")}>{d.grade.replace("_", " ")}</Pill>
                     </td>
                   </tr>
@@ -114,7 +168,7 @@ function Dashboard({ parishId }: { parishId: number }) {
             </table>
           </div>
         )}
-      </section>
+      </Card>
     </div>
   );
 }
@@ -126,11 +180,24 @@ function OfficerRoute() {
   );
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4">
+    <div className="flex flex-col gap-4">
+      <HeroBanner subtitle="Parish view — lots, advisories, and farmer declarations." />
       <ParishPicker value={parishId} onChange={setParishId} />
       {parishId != null && <Dashboard parishId={parishId} />}
-      <AdvisoryQueueSection />
-      <PostsSection />
+      <div className="grid gap-4 lg:grid-cols-12">
+        <div className="lg:col-span-8">
+          <PostsSection />
+        </div>
+        <div className="lg:col-span-4">
+          <QuickActions
+            actions={[
+              { label: "Post Advisory", to: "/parish#advisories", icon: "megaphone", tone: "sky" },
+              { label: "Bulk Sale", to: "/parish#sales", icon: "truck", tone: "orange" },
+              { label: "Update Market Price", to: "/parish#prices", icon: "tag", tone: "grain" },
+            ]}
+          />
+        </div>
+      </div>
     </div>
   );
 }

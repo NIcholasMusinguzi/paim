@@ -15,7 +15,7 @@ export const Field = forwardRef<HTMLInputElement, Props>(({ label, error, hideLa
         id={fieldId}
         aria-invalid={!!error}
         aria-describedby={error ? `${fieldId}-error` : undefined}
-        className={`min-h-11 rounded border border-rule bg-panel px-3 py-2 text-ink outline-none focus:border-sea ${
+        className={`min-h-11 rounded-lg border border-rule bg-panel px-3 py-2 text-ink outline-none focus:border-leaf ${
           error ? "border-murram" : ""
         } ${className}`}
         {...props}

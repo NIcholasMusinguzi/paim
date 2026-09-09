@@ -17,7 +17,7 @@ export function Meter({ value, target, label }: { value: number; target: number;
         className="h-3 overflow-hidden rounded-full bg-rule"
       >
         <div
-          className="h-full rounded-full bg-grain transition-[width] duration-300 motion-reduce:transition-none"
+          className="h-full rounded-full bg-leaf transition-[width] duration-300 motion-reduce:transition-none"
           style={{ width: `${pct}%` }}
         />
       </div>

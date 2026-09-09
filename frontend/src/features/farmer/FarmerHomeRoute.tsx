@@ -1,7 +1,7 @@
 import { ApiError } from "../../api/client";
-import { useLogout } from "../../api/hooks/useMe";
-import { Button } from "../../design/ui/Button";
+import { Card } from "../../design/ui/Card";
 import { EmptyState } from "../../design/ui/EmptyState";
+import { HeroBanner } from "../../design/ui/HeroBanner";
 import { Meter } from "../../design/ui/Meter";
 import { Pill } from "../../design/ui/Pill";
 import { AdviceRequestSection } from "./AdviceRequestSection";
@@ -16,7 +16,6 @@ function tone<T extends string>(map: Record<string, T>, key: string, fallback: T
 }
 
 function FarmerHomeRoute() {
-  const logout = useLogout();
   const { data, isLoading, isError, error } = useFarmerHome();
 
   if (isLoading) return <div className="p-6 text-soft">Loading your home page…</div>;
@@ -32,21 +31,10 @@ function FarmerHomeRoute() {
   const home = data!;
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6 p-4">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-ink">{home.farmer.full_name}</h1>
-          <p className="text-sm text-soft">
-            {home.farmer.village}, {home.farmer.parish}
-          </p>
-        </div>
-        <Button variant="ghost" onClick={() => logout.mutate()} disabled={logout.isPending}>
-          Sign out
-        </Button>
-      </header>
+    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+      <HeroBanner subtitle={`${home.farmer.full_name} · ${home.farmer.village}, ${home.farmer.parish}`} />
 
-      <section className="flex flex-col gap-3 rounded-lg bg-panel p-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-soft">Advice for you</h2>
+      <Card title="Advice for you">
         {home.advice.length === 0 ? (
           <EmptyState title="No advice for your crops this week yet." />
         ) : (
@@ -58,10 +46,9 @@ function FarmerHomeRoute() {
             </div>
           ))
         )}
-      </section>
+      </Card>
 
-      <section className="flex flex-col gap-4 rounded-lg bg-panel p-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-soft">Lot progress</h2>
+      <Card title="Lot progress">
         {home.lots.length === 0 ? (
           <EmptyState title={`${home.farmer.parish} has not opened a lot this season. Your agent opens it when the first farmer is ready to sell.`} />
         ) : (
@@ -75,10 +62,9 @@ function FarmerHomeRoute() {
             </div>
           ))
         )}
-      </section>
+      </Card>
 
-      <section className="flex flex-col gap-3 rounded-lg bg-panel p-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-soft">Recent prices</h2>
+      <Card title="Recent prices">
         {home.prices.length === 0 ? (
           <EmptyState title="No settled prices for your crops yet this season." />
         ) : (
@@ -91,10 +77,9 @@ function FarmerHomeRoute() {
             ))}
           </ul>
         )}
-      </section>
+      </Card>
 
-      <section className="flex flex-col gap-3 rounded-lg bg-panel p-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-soft">Your recent declarations</h2>
+      <Card title="Your recent declarations">
         {home.declarations.length === 0 ? (
           <EmptyState title="You have not declared any harvest yet." />
         ) : (
@@ -109,17 +94,16 @@ function FarmerHomeRoute() {
             ))}
           </ul>
         )}
-      </section>
+      </Card>
 
       {home.trends.length > 0 && (
-        <section className="flex flex-col gap-3 rounded-lg bg-panel p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-soft">What's changing</h2>
+        <Card title="What's changing">
           {home.trends.map((t) => (
             <p key={t.id} className="text-sm text-ink">
               {t.message}
             </p>
           ))}
-        </section>
+        </Card>
       )}
 
       <PostsSection />
