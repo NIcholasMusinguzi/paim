@@ -5,6 +5,13 @@ import { useAuth } from "./AuthProvider";
 // A convenience, not a control: every endpoint enforces scope server-side
 // through parish_ids_for(). Hiding a route here is UX, never the security
 // boundary (IMPLEMENTATION_REACT.md section 7).
+export function RequireAuth() {
+  const { me, isLoading } = useAuth();
+  if (isLoading) return null;
+  if (!me) return <Navigate to="/sign-in" replace />;
+  return <Outlet />;
+}
+
 export function RequireRole({ roles }: { roles: string[] }) {
   const { me, isLoading } = useAuth();
   if (isLoading) return null;

@@ -1,5 +1,5 @@
-from drf_spectacular.utils import extend_schema
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
@@ -12,7 +12,7 @@ from apps.accounts.permissions import IsOfficer
 from apps.accounts.scoping import parish_ids_for
 from apps.geo.models import Parish
 from apps.market.models import Bid, Buyer, Lot, MarketPrice
-from apps.market.selectors import open_lots, parish_dashboard_data
+from apps.market.selectors import lots_for_viewer, open_lots, parish_dashboard_data
 from apps.market.serializers import (
     AwardInputSerializer,
     BidInputSerializer,
@@ -80,6 +80,16 @@ class BuyerLotListView(APIView):
     @extend_schema(responses={200: BuyerLotSerializer(many=True)})
     def get(self, request):
         return Response(BuyerLotSerializer(open_lots(), many=True).data)
+
+
+class LotListView(APIView):
+    @extend_schema(responses={200: LotDetailSerializer(many=True)})
+    def get(self, request):
+        return Response(
+            LotDetailSerializer(
+                lots_for_viewer(request.user), many=True, context={"viewer": request.user},
+            ).data
+        )
 
 
 class LotDetailView(APIView):

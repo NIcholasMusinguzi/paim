@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router";
 
 import { ApiError } from "../../api/client";
 import { useAuth } from "../../app/AuthProvider";
@@ -15,10 +14,7 @@ import { Select } from "../../design/ui/Select";
 import { StatCard } from "../../design/ui/StatCard";
 import { WeatherCard } from "../../design/ui/WeatherCard";
 import { useLiveChannel } from "../../realtime/useLiveChannel";
-import { AdvisoryQueueSection } from "./AdvisoryQueueSection";
-import { PostsSection } from "./PostComposer";
 import { useParishDashboard, useParishes } from "./useParishDashboard";
-import ReportsRoute from "./ReportsRoute";
 
 const GRADE_TONE = {
   grade_1: "leaf",
@@ -192,18 +188,15 @@ function Dashboard({ parishId }: { parishId: number }) {
         </Card>
 
         <div className="xl:col-span-3">
-          <WeatherCard place={`${dash.parish.name} parish`} />
+          <WeatherCard parishId={parishId} />
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-12">
-        <div id="advisories" className="lg:col-span-7">
-          <AdvisoryQueueSection />
-        </div>
         <Card
           id="prices"
           title="Current market prices"
-          className="lg:col-span-5"
+          className="lg:col-span-12"
         >
           {dash.metrics?.avg_price_per_kg != null && dash.lot ? (
             <div className="flex items-center justify-between text-sm">
@@ -254,49 +247,39 @@ function Dashboard({ parishId }: { parishId: number }) {
 
 function OfficerRoute() {
   const { me } = useAuth();
-  const location = useLocation();
   const [parishId, setParishId] = useState<number | null>(
     me?.scope.level === "parish" ? me.scope.id : null,
   );
 
-  return location.pathname.endsWith("/reports") ? (
-    <ReportsRoute />
-  ) : (
+  return (
     <div className="flex flex-col gap-4">
       <HeroBanner subtitle="Parish view — lots, advisories, and farmer declarations." />
       <ParishPicker value={parishId} onChange={setParishId} />
       {parishId != null && <Dashboard parishId={parishId} />}
-      <div className="grid gap-4 lg:grid-cols-12">
-        <div className="lg:col-span-8">
-          <PostsSection />
-        </div>
-        <div className="lg:col-span-4">
-          <QuickActions
-            actions={[
-              {
-                label: "Post Advisory",
-                to: "/parish#advisories",
-                icon: "megaphone",
-                tone: "sky",
-              },
-              {
-                label: "Bulk Sale",
-                to: "/parish#sales",
-                icon: "truck",
-                tone: "orange",
-              },
-              {
-                label: "Update Market Price",
-                to: "/parish#prices",
-                icon: "tag",
-                tone: "grain",
-              },
-            ]}
-          />
-        </div>
-      </div>
+      <QuickActions
+        actions={[
+          {
+            label: "Post Advisory",
+            to: "/posts",
+            icon: "megaphone",
+            tone: "sky",
+          },
+          {
+            label: "Bulk Sale",
+            to: "/parish#sales",
+            icon: "truck",
+            tone: "orange",
+          },
+          {
+            label: "Update Market Price",
+            to: "/parish#prices",
+            icon: "tag",
+            tone: "grain",
+          },
+        ]}
+      />
     </div>
   );
 }
 
-export const Component = OfficerRoute;
+export default OfficerRoute;

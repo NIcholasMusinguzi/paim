@@ -15,8 +15,7 @@ def farmers_for_parishes(parish_ids):
 def farmer_home(farmer: Farmer) -> dict:
     """Everything the farmer route needs in one read, composed here rather
     than as five client round trips (IMPLEMENTATION_REACT.md section 4.1).
-    Weather (F18, UNMA integration) is out of scope for phase 1 — see
-    IMPLEMENTATION.md section 1 — so there is deliberately no weather key."""
+    Weather is served from GET /api/v1/weather/ (Open-Meteo), not this payload."""
     parish = farmer.village.parish
     season = current_season()
     crop_ids = list(

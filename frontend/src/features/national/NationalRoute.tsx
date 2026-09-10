@@ -65,11 +65,11 @@ function ParishDrillDown({
 
 const ADMIN_ACTIONS: QuickAction[] = [
   { label: "Add Farmer", to: "/national/admin", icon: "userPlus", tone: "leaf" },
-  { label: "Post Advisory", to: "/parish", icon: "megaphone", tone: "sky" },
+  { label: "Post Advisory", to: "/posts", icon: "megaphone", tone: "sky" },
   { label: "Update Market Price", to: "/national#prices", icon: "tag", tone: "grain" },
   { label: "Register Buyer", to: "/national/admin", icon: "briefcase", tone: "violet" },
   { label: "Bulk Sale", to: "/parish", icon: "truck", tone: "orange" },
-  { label: "Generate Report", to: "/national/trends", icon: "file", tone: "rose" },
+  { label: "Generate Report", to: "/reports", icon: "file", tone: "rose" },
 ];
 
 const DISTRICT_ACTIONS: QuickAction[] = ADMIN_ACTIONS.filter(
@@ -245,7 +245,7 @@ function NationalRoute() {
         </Card>
 
         <div className="xl:col-span-3">
-          <WeatherCard place="Uganda · Central region" />
+          <WeatherCard />
         </div>
       </div>
 
@@ -330,7 +330,15 @@ function NationalRoute() {
       )}
 
       <div className="grid gap-4 lg:grid-cols-12">
-        <Card title="Recent activities" className="lg:col-span-8">
+        <Card
+          title="Recent activities"
+          className="lg:col-span-8"
+          action={
+            <Link to="/posts" className="text-sm font-medium text-leaf">
+              View all
+            </Link>
+          }
+        >
           {!posts || posts.length === 0 ? (
             <EmptyState title="No recent posts yet." />
           ) : (

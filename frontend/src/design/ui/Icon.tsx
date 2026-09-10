@@ -32,6 +32,7 @@ export const Icons = {
   sun: (p: Props) => svg(p.className, <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>),
   rain: (p: Props) => svg(p.className, <><path d="M20 17.5A4.5 4.5 0 0 0 17 10h-1.3A6.5 6.5 0 1 0 4.5 16.5" /><path d="M8 19v2M12 18v3M16 19v2" /></>),
   home: (p: Props) => svg(p.className, <><path d="M3 11 12 3l9 8" /><path d="M5 10v10h14V10" /></>),
+  chat: (p: Props) => svg(p.className, <><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></>),
   plus: (p: Props) => svg(p.className, <><path d="M12 5v14M5 12h14" /></>),
   trendUp: (p: Props) => svg(p.className, <><path d="M4 16l6-6 4 4 6-8" /><path d="M14 6h6v6" /></>),
   logout: (p: Props) => svg(p.className, <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></>),

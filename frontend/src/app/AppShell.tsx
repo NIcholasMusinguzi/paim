@@ -4,7 +4,6 @@ import { Outlet } from "react-router";
 import { useAuth } from "./AuthProvider";
 import { AppSidebar } from "./AppSidebar";
 import { AppTopbar } from "./AppTopbar";
-import { AdviceRequestSection } from "../features/farmer/AdviceRequestSection";
 
 export function AppShell() {
   const { me } = useAuth();
@@ -25,9 +24,6 @@ export function AppShell() {
         <AppTopbar onMenu={() => setMenuOpen(true)} />
         <main className="p-4 md:p-6">
           <Outlet />
-          <div className="mx-auto mt-4 max-w-2xl">
-            <AdviceRequestSection />
-          </div>
         </main>
       </div>
     </div>

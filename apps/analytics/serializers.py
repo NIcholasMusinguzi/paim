@@ -53,3 +53,24 @@ class TrendInsightSerializer(serializers.Serializer):
     message = serializers.CharField()
     approved_by = serializers.CharField(source="approved_by.full_name", allow_null=True, default=None)
     published_at = serializers.DateTimeField(allow_null=True)
+
+
+class AdvisoryReportRowSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    parish = serializers.CharField()
+    requester = serializers.CharField()
+    status = serializers.CharField()
+    response_count = serializers.IntegerField()
+    message = serializers.CharField()
+
+
+class MarketReportRowSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    parish = serializers.CharField()
+    crop = serializers.CharField()
+    status = serializers.CharField()
+    bags = serializers.IntegerField()
+    bid_count = serializers.IntegerField()
+    awarded_buyer = serializers.CharField(allow_null=True)
+    awarded_price_per_kg = serializers.IntegerField(allow_null=True)
+

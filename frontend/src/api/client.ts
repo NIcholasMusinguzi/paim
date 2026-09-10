@@ -57,3 +57,41 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
   return res.status === 204 ? (undefined as T) : res.json();
 }
+
+export async function download(path: string, filename: string): Promise<void> {
+  const run = () =>
+    fetch(`${BASE}${path}`, {
+      credentials: "include",
+      headers: { "X-CSRFToken": csrf() },
+    });
+
+  let res = await run();
+  if (res.status === 401 && !path.startsWith("/auth/")) {
+    refreshing ??= fetch(`${BASE}/auth/refresh/`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "X-CSRFToken": csrf() },
+    })
+      .then((r) => {
+        if (!r.ok) throw new ApiError(401, humanStatus(401));
+      })
+      .finally(() => {
+        refreshing = null;
+      });
+    await refreshing;
+    res = await run();
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}) as { detail?: string });
+    throw new ApiError(res.status, body.detail ?? humanStatus(res.status));
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}

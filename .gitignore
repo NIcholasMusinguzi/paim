@@ -11,3 +11,9 @@ frontend/node_modules/
 frontend/dist/
 frontend/tsconfig.tsbuildinfo
 frontend/openapi-schema.yaml
+
+graphify-out/
+graph.json
+graph.html
+GRAPH_REPORT.md
+.graphify_*

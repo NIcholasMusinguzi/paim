@@ -48,6 +48,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_PAGINATION_CLASS": "apps.core.pagination.CursorPage",
     "PAGE_SIZE": 50,
+    "URL_FORMAT_OVERRIDE": None,
 }
 
 SPECTACULAR_SETTINGS = {
@@ -77,6 +78,17 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {"hosts": [os.environ.get("REDIS_URL", "redis://localhost:6379/0")]},
+    }
+}
+
+_redis_cache = os.environ.get("REDIS_CACHE_URL")
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": _redis_cache,
+    } if _redis_cache else {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "paim",
     }
 }
 

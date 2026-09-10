@@ -4,9 +4,10 @@ from apps.market.views import (
     AwardView,
     BidSubmitView,
     BuyerLotListView,
-    HealthView,
     DailyMarketPriceView,
+    HealthView,
     LotDetailView,
+    LotListView,
     ParishDashboardView,
 )
 
@@ -15,6 +16,7 @@ urlpatterns = [
     path("market-prices/daily/", DailyMarketPriceView.as_view()),
     path("parish/<int:parish_id>/dashboard/", ParishDashboardView.as_view()),
     path("buyer/lots/", BuyerLotListView.as_view()),
+    path("lots/", LotListView.as_view()),
     path("lots/<int:lot_id>/", LotDetailView.as_view()),
     path("lots/<int:lot_id>/bids/", BidSubmitView.as_view()),
     path("lots/<int:lot_id>/award/", AwardView.as_view()),

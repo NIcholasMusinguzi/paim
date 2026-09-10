@@ -1,10 +1,11 @@
+import { Link } from "react-router";
+
 import { ApiError } from "../../api/client";
 import { Card } from "../../design/ui/Card";
 import { EmptyState } from "../../design/ui/EmptyState";
 import { HeroBanner } from "../../design/ui/HeroBanner";
 import { Meter } from "../../design/ui/Meter";
 import { Pill } from "../../design/ui/Pill";
-import { PostsSection } from "./PostsSection";
 import { DeclarationSection, FarmerProfileSection } from "./FarmerActions";
 import { WeatherCard } from "../../design/ui/WeatherCard";
 import { useFarmerHome } from "./useFarmerHome";
@@ -59,7 +60,7 @@ function FarmerHomeRoute() {
         subtitle={`${home.farmer.full_name} · ${home.farmer.village}, ${home.farmer.parish}`}
       />
 
-      <WeatherCard place={`${home.farmer.parish} parish`} />
+      <WeatherCard />
 
       <Card title="Advice for you">
         {home.advice.length === 0 ? (
@@ -154,7 +155,16 @@ function FarmerHomeRoute() {
         </Card>
       )}
 
-      <PostsSection />
+      <Card
+        title="From your officers"
+        action={
+          <Link to="/posts" className="text-sm font-medium text-leaf">
+            View all
+          </Link>
+        }
+      >
+        <p className="text-sm text-soft">Announcements from officers in your parish live on the Posts page.</p>
+      </Card>
       <DeclarationSection />
       <FarmerProfileSection />
     </div>

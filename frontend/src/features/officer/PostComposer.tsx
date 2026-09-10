@@ -16,7 +16,7 @@ const OWN_SCOPE_LABEL: Record<string, string> = {
   parish: "My parish",
 };
 
-function PostComposer() {
+export function PostComposer() {
   const { me } = useAuth();
   const { data: parishes } = useParishes();
   const create = useCreatePost();
