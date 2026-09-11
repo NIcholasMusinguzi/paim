@@ -1,4 +1,4 @@
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
 from django.utils import timezone
 
 from apps.farmers.models import Farmer
@@ -13,6 +13,55 @@ def pct(numerator: int, denominator: int) -> int:
     return round(numerator * 100 / denominator) if denominator else 0
 
 
+def national_metric(*, season_id, crop_id) -> dict:
+    """Return the national summary from source data for the selected filters."""
+    declarations = Declaration.objects.filter(
+        lot__season_id=season_id, lot__crop_id=crop_id,
+    ).exclude(grade=Grade.REJECT)
+    aggregate = declarations.aggregate(
+        total_bags=Sum("bags"),
+        grade1_bags=Sum("bags", filter=Q(grade=Grade.G1)),
+        active=Count("farmer", distinct=True),
+        priced_bags=Sum(
+            "bags",
+            filter=Q(
+                lot__status__in=[LotStatus.AWARDED, LotStatus.SETTLED],
+                lot__awarded_bid__isnull=False,
+            ),
+        ),
+        weighted_price=Sum(
+            F("bags") * F("lot__awarded_bid__price_per_kg"),
+            filter=Q(
+                lot__status__in=[LotStatus.AWARDED, LotStatus.SETTLED],
+                lot__awarded_bid__isnull=False,
+            ),
+        ),
+    )
+    bags = aggregate["total_bags"] or 0
+    priced_bags = aggregate["priced_bags"] or 0
+    metric = {
+        "farmers_registered": Farmer.objects.count(),
+        "farmers_active": aggregate["active"] or 0,
+        "bags_declared": bags,
+        "pct_grade1": pct(aggregate["grade1_bags"] or 0, bags),
+        "avg_price_per_kg": (
+            round(aggregate["weighted_price"] / priced_bags)
+            if priced_bags else None
+        ),
+        "districts_reporting": declarations.values(
+            "lot__parish__subcounty__district_id"
+        ).distinct().count(),
+        "computed_at": timezone.now(),
+    }
+    if not declarations.exists():
+        cached = NationalSeasonMetric.objects.filter(
+            season_id=season_id, crop_id=crop_id).first()
+        if cached:
+            for field in ("bags_declared", "pct_grade1", "avg_price_per_kg", "districts_reporting"):
+                metric[field] = getattr(cached, field)
+    return metric
+
+
 def weighted(rows, value_field: str, weight_field: str = "bags_declared"):
     """Volume-weighted average, never a mean of means (IMPLEMENTATION.md
     section 7.5) — a district with one large parish and one tiny one is not
@@ -24,7 +73,8 @@ def weighted(rows, value_field: str, weight_field: str = "bags_declared"):
     total_weight = sum(getattr(r, weight_field) for r in valued)
     if not total_weight:
         return None
-    weighted_sum = sum(getattr(r, value_field) * getattr(r, weight_field) for r in valued)
+    weighted_sum = sum(getattr(r, value_field) *
+                       getattr(r, weight_field) for r in valued)
     return round(weighted_sum / total_weight)
 
 
@@ -57,7 +107,8 @@ def recompute_parish_metric(*, parish_id, season_id, crop_id):
             "computed_at": timezone.now(),
         })
     district_id = Parish.objects.get(pk=parish_id).subcounty.district_id
-    rollup_district(district_id=district_id, season_id=season_id, crop_id=crop_id)
+    rollup_district(district_id=district_id,
+                    season_id=season_id, crop_id=crop_id)
     return row
 
 
@@ -76,14 +127,17 @@ def rollup_district(*, district_id, season_id, crop_id):
             "computed_at": timezone.now(),
         })
     row.refresh_from_db()
-    events.publish(f"scope.district.{district_id}", "metrics.district", DistrictMetricSerializer(row).data)
-    events.publish("scope.national.", "metrics.district", DistrictMetricSerializer(row).data)
+    events.publish(f"scope.district.{district_id}",
+                   "metrics.district", DistrictMetricSerializer(row).data)
+    events.publish("scope.national.", "metrics.district",
+                   DistrictMetricSerializer(row).data)
     rollup_national(season_id=season_id, crop_id=crop_id)
     return row
 
 
 def rollup_national(*, season_id, crop_id):
-    rows = list(DistrictSeasonMetric.objects.filter(season_id=season_id, crop_id=crop_id))
+    rows = list(DistrictSeasonMetric.objects.filter(
+        season_id=season_id, crop_id=crop_id))
     # Ranked on average price: the whole point of the national dashboard is
     # price transparency across districts (the "so what" a district officer
     # or national admin looks at first).
@@ -91,7 +145,8 @@ def rollup_national(*, season_id, crop_id):
         sorted(rows, key=lambda r: (r.avg_price_per_kg is None, -(r.avg_price_per_kg or 0))), start=1,
     ):
         if r.rank_national != rank:
-            DistrictSeasonMetric.objects.filter(pk=r.pk).update(rank_national=rank)
+            DistrictSeasonMetric.objects.filter(
+                pk=r.pk).update(rank_national=rank)
 
     row, _ = NationalSeasonMetric.objects.update_or_create(
         season_id=season_id, crop_id=crop_id,
@@ -104,5 +159,6 @@ def rollup_national(*, season_id, crop_id):
             "districts_reporting": len(rows),
             "computed_at": timezone.now(),
         })
-    events.publish("scope.national.", "metrics.national", NationalMetricSerializer(row).data)
+    events.publish("scope.national.", "metrics.national",
+                   NationalMetricSerializer(row).data)
     return row

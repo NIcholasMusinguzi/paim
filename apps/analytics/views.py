@@ -16,6 +16,7 @@ from apps.analytics.models import (
 )
 from apps.analytics.reports import BUILDERS
 from apps.analytics.selectors import district_in_scope, district_season_bars, parish_comparison
+from apps.analytics.services import national_metric
 from apps.analytics.serializers import (
     NationalMetricsResponseSerializer,
     ParishMetricSerializer,
@@ -70,10 +71,7 @@ class NationalMetricsView(APIView):
                 season_id=season_id, crop_id=crop_id)
             .select_related("district").order_by("rank_national")
         )
-        national = (
-            NationalSeasonMetric.objects.filter(
-                season_id=season_id, crop_id=crop_id).first()
-        )
+        national = national_metric(season_id=season_id, crop_id=crop_id)
         return Response(NationalMetricsResponseSerializer({"districts": districts, "national": national}).data)
 
 
@@ -143,7 +141,8 @@ class TrendListView(APIView):
     @extend_schema(responses={200: TrendInsightSerializer(many=True)})
     def get(self, request):
         status_filter = request.query_params.get("status", "pending")
-        rows = insights_for(request.user, published=status_filter == "published")
+        rows = insights_for(
+            request.user, published=status_filter == "published")
         return Response(TrendInsightSerializer(rows, many=True).data)
 
 

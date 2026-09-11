@@ -35,7 +35,8 @@ def world(db):
 
 def _client(user):
     client = APIClient()
-    client.post("/api/v1/auth/login/", {"phone": user.phone, "password": "pin1234"}, format="json")
+    client.post("/api/v1/auth/login/",
+                {"phone": user.phone, "password": "pin1234"}, format="json")
     return client
 
 
@@ -52,6 +53,18 @@ def test_national_metrics_returns_ranked_districts_and_totals(world):
 def test_national_metrics_requires_season_and_crop(world):
     res = _client(world["national_admin"]).get("/api/v1/metrics/national/")
     assert res.status_code == 400
+
+
+@pytest.mark.django_db
+def test_national_metrics_returns_zero_summary_without_cached_rollup(world):
+    NationalSeasonMetric.objects.filter(
+        season=world["season"], crop=world["crop"]).delete()
+    res = _client(world["national_admin"]).get(
+        f"/api/v1/metrics/national/?season={world['season'].id}&crop={world['crop'].id}")
+    assert res.status_code == 200
+    assert res.data["national"]["farmers_registered"] == 0
+    assert res.data["national"]["farmers_active"] == 0
+    assert res.data["national"]["avg_price_per_kg"] is None
 
 
 @pytest.mark.django_db
