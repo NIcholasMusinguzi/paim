@@ -5,9 +5,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import Role
+from apps.accounts.permissions import IsOfficer
+from apps.accounts.scoping import parish_ids_for
 from apps.farmers.models import Crop, Planting, Plot, Season
-from apps.farmers.selectors import farmer_home
+from apps.farmers.selectors import farmer_home, farmers_for_parishes
 from apps.farmers.serializers import (
+    FarmerDirectorySerializer,
     FarmerHomeSerializer,
     ReferenceDataSerializer,
     FarmerDeclarationSerializer,
@@ -20,6 +23,19 @@ from apps.market.services import DomainError, declare
 class IsFarmer(BasePermission):
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_authenticated and request.user.role == Role.FARMER)
+
+
+class FarmerDirectoryView(APIView):
+    permission_classes = [IsOfficer]
+
+    @extend_schema(responses={200: FarmerDirectorySerializer(many=True)})
+    def get(self, request):
+        farmers = (
+            farmers_for_parishes(parish_ids_for(request.user))
+            .select_related("village__parish__subcounty__district")
+            .order_by("full_name")
+        )
+        return Response(FarmerDirectorySerializer(farmers, many=True).data)
 
 
 class FarmerHomeView(APIView):

@@ -17,7 +17,7 @@ export type NavItem = {
 
 const OFFICER_NAV: NavItem[] = [
   { label: "Dashboard", to: "/national", icon: "grid", match: "exact" },
-  { label: "Farmers", to: "/national/farmers", icon: "users", match: "prefix" },
+  { label: "Farmers", to: "/farmers", icon: "users", match: "prefix" },
   { label: "Posts", to: "/posts", icon: "megaphone", match: "prefix" },
   { label: "Advisory requests", to: "/advisories", icon: "file", match: "prefix" },
   { label: "Ask for advice", to: "/advice", icon: "chat", match: "prefix" },
@@ -31,6 +31,7 @@ const OFFICER_NAV: NavItem[] = [
 
 const PARISH_NAV: NavItem[] = [
   { label: "Dashboard", to: "/parish", icon: "grid", match: "exact" },
+  { label: "Farmers", to: "/farmers", icon: "users", match: "prefix" },
   { label: "Posts", to: "/posts", icon: "megaphone", match: "prefix" },
   { label: "Advisory requests", to: "/advisories", icon: "file", match: "prefix" },
   { label: "Ask for advice", to: "/advice", icon: "chat", match: "prefix" },

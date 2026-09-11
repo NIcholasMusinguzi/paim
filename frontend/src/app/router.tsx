@@ -25,7 +25,10 @@ export const router = createBrowserRouter([
       },
       {
         element: <RequireRole roles={[...OFFICER_ROLES]} />,
-        children: [{ path: "advisories", lazy: () => import("../features/pages/AdvisoriesRoute") }],
+        children: [
+          { path: "advisories", lazy: () => import("../features/pages/AdvisoriesRoute") },
+          { path: "farmers", lazy: () => import("../features/pages/FarmersRoute") },
+        ],
       },
       {
         element: <RequireRole roles={["farmer"]} />,

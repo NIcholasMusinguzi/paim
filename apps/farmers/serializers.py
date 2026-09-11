@@ -10,6 +10,17 @@ class FarmerSerializer(serializers.Serializer):
     parish = serializers.CharField(source="village.parish.name")
 
 
+class FarmerDirectorySerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    full_name = serializers.CharField()
+    sex = serializers.CharField()
+    phone = serializers.CharField(allow_null=True, allow_blank=True)
+    village = serializers.CharField(source="village.name")
+    parish = serializers.CharField(source="village.parish.name")
+    subcounty = serializers.CharField(source="village.parish.subcounty.name")
+    district = serializers.CharField(source="village.parish.subcounty.district.name")
+
+
 class AdviceSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     crop = serializers.CharField(source="crop.name")
