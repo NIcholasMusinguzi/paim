@@ -22,6 +22,7 @@ class SeasonViewSet(AdminModelViewSet):
 
 class FarmerViewSet(AdminModelViewSet):
     queryset = Farmer.objects.select_related(
-        "village__parish__subcounty__district", "registered_by", "user").order_by("full_name")
+        "village__parish__subcounty__district", "registered_by", "user"
+    ).prefetch_related("plots__plantings__crop").order_by("full_name")
     serializer_class = FarmerAdminSerializer
     permission_classes = [IsNationalAdmin]

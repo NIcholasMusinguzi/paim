@@ -7,8 +7,9 @@ from rest_framework.views import APIView
 from apps.accounts.models import Role
 from apps.accounts.permissions import IsOfficer
 from apps.accounts.scoping import parish_ids_for
-from apps.farmers.models import Crop, Planting, Plot, Season
-from apps.farmers.selectors import farmer_home, farmers_for_parishes
+from apps.farmers.models import Crop, Planting
+from apps.farmers.selectors import crop_ids_for, crop_names, farmer_home, farmers_for_parishes
+from apps.farmers.services import FarmerError, set_current_crops
 from apps.farmers.serializers import (
     FarmerDirectorySerializer,
     FarmerHomeSerializer,
@@ -33,6 +34,7 @@ class FarmerDirectoryView(APIView):
         farmers = (
             farmers_for_parishes(parish_ids_for(request.user))
             .select_related("village__parish__subcounty__district")
+            .prefetch_related("plots__plantings__crop")
             .order_by("full_name")
         )
         return Response(FarmerDirectorySerializer(farmers, many=True).data)
@@ -76,11 +78,15 @@ class FarmerProfileView(APIView):
     def get(self, request):
         farmer = farmer_for(request)
         planting = Planting.objects.filter(plot__farmer=farmer).select_related(
-            "crop").order_by("-season__year").first()
+            "plot", "crop").order_by("-season__year").first()
+        ids = crop_ids_for(farmer)
         return Response({
             "full_name": farmer.full_name, "phone": farmer.phone or "", "sex": farmer.sex,
-            "language": farmer.language, "area_acres": planting.plot.area_acres if planting else None,
-            "crop_id": planting.crop_id if planting else None,
+            "language": farmer.language,
+            "area_acres": planting.plot.area_acres if planting else None,
+            "crop_id": ids[0] if ids else None,
+            "crop_ids": ids,
+            "crops": crop_names(farmer),
             "planting_date": planting.planting_date if planting else None,
         })
 
@@ -95,33 +101,20 @@ class FarmerProfileView(APIView):
         farmer.save(update_fields=[field for field in (
             "full_name", "phone", "sex", "language") if field in values] + ["updated_at"])
 
-        if "area_acres" in values or "crop_id" in values or "planting_date" in values:
-            season = __import__("apps.advisory.selectors", fromlist=[
-                                "current_season"]).current_season()
-            if season is None:
-                raise ValidationError(
-                    "There is no active season to update farm details.")
-            planting = Planting.objects.filter(
-                plot__farmer=farmer, season=season).select_related("plot").first()
-            if planting is None:
-                if not {"area_acres", "crop_id", "planting_date"}.issubset(values):
-                    raise ValidationError(
-                        "area_acres, crop_id, and planting_date are required for a new crop record.")
-                plot = Plot.objects.create(
-                    farmer=farmer, area_acres=values["area_acres"])
-                Planting.objects.create(
-                    plot=plot, season=season, crop_id=values["crop_id"], planting_date=values["planting_date"])
-            else:
-                if "area_acres" in values:
-                    planting.plot.area_acres = values["area_acres"]
-                    planting.plot.save(
-                        update_fields=["area_acres", "updated_at"])
-                if "crop_id" in values:
-                    planting.crop_id = values["crop_id"]
-                if "planting_date" in values:
-                    planting.planting_date = values["planting_date"]
-                planting.save(
-                    update_fields=["crop_id", "planting_date", "updated_at"])
+        crop_ids = values.get("crop_ids")
+        if crop_ids is None and "crop_id" in values:
+            crop_ids = [values["crop_id"]]
+        farm_touched = crop_ids is not None or "area_acres" in values or "planting_date" in values
+        if farm_touched:
+            try:
+                if crop_ids is None:
+                    crop_ids = crop_ids_for(farmer)
+                set_current_crops(
+                    farmer=farmer, crop_ids=crop_ids,
+                    planting_date=values.get("planting_date"),
+                    area_acres=values.get("area_acres"))
+            except FarmerError as error:
+                raise ValidationError(str(error))
         return self.get(request)
 
 

@@ -15,6 +15,7 @@ type FarmerRow = {
   parish: string;
   subcounty: string;
   district: string;
+  crops: string[];
 };
 
 function FarmerDirectory() {
@@ -34,6 +35,7 @@ function FarmerDirectory() {
             <thead>
               <tr className="border-b border-rule text-xs text-soft">
                 <th className="py-2 pr-3">Name</th>
+                <th className="py-2 pr-3">Crops</th>
                 <th className="py-2 pr-3">Village</th>
                 <th className="py-2 pr-3">Parish</th>
                 <th className="py-2 pr-3">Subcounty</th>
@@ -45,6 +47,7 @@ function FarmerDirectory() {
               {rows.map((row) => (
                 <tr key={row.id} className="border-b border-rule last:border-0">
                   <td className="py-2.5 pr-3 text-ink">{row.full_name}</td>
+                  <td className="py-2.5 pr-3 text-ink">{row.crops?.length ? row.crops.join(", ") : "—"}</td>
                   <td className="py-2.5 pr-3 text-ink">{row.village}</td>
                   <td className="py-2.5 pr-3 text-ink">{row.parish}</td>
                   <td className="py-2.5 pr-3 text-ink">{row.subcounty}</td>

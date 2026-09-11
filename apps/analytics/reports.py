@@ -4,7 +4,7 @@ from apps.accounts.models import Role
 from apps.accounts.scoping import parish_ids_for
 from apps.advisory.selectors import advisory_requests_visible_to
 from apps.analytics.models import ParishSeasonMetric
-from apps.farmers.selectors import farmers_for_parishes
+from apps.farmers.selectors import crop_names, farmers_for_parishes
 from apps.geo.models import Parish
 from apps.geo.weather import WeatherError, weather_for_parish
 from apps.market.models import LotStatus, MarketPrice
@@ -50,21 +50,23 @@ def _region(parish) -> dict:
 
 
 def farmers_report(user, district_id=None, **_):
-    headers = ["District", "Subcounty", "Parish", "Village", "Farmer", "Sex", "Phone"]
+    headers = ["District", "Subcounty", "Parish", "Village", "Farmer", "Crops", "Sex", "Phone"]
     if user.role == Role.BUYER:
         return "paim-farmers", "Farmers", headers, [], []
     payload = []
     for farmer in farmers_for_parishes(_scoped_parish_ids(user, district_id)).select_related(
-            "village__parish__subcounty__district"):
+            "village__parish__subcounty__district").prefetch_related("plots__plantings__crop"):
         loc = _region(farmer.village.parish)
+        crops = crop_names(farmer)
         payload.append({
             **loc,
             "village": farmer.village.name,
             "farmer": farmer.full_name,
+            "crops": ", ".join(crops) if crops else "—",
             "sex": farmer.sex,
             "phone": farmer.phone or "—",
         })
-    rows = [[r["district"], r["subcounty"], r["parish"], r["village"], r["farmer"], r["sex"], r["phone"]]
+    rows = [[r["district"], r["subcounty"], r["parish"], r["village"], r["farmer"], r["crops"], r["sex"], r["phone"]]
             for r in payload]
     return "paim-farmers", "Farmers", headers, payload, rows
 

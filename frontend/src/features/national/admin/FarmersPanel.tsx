@@ -2,18 +2,21 @@ import { type FormEvent, useState } from "react";
 
 import type { components } from "../../../api/schema";
 import { Button } from "../../../design/ui/Button";
+import { CropChecklist } from "../../../design/ui/CropChecklist";
 import { Field } from "../../../design/ui/Field";
 import { ResourceTable } from "../../../design/ui/ResourceTable";
 import { Select } from "../../../design/ui/Select";
 import { useAdminResource } from "./useAdminResource";
 
 type Village = components["schemas"]["VillageAdmin"];
-type Farmer = components["schemas"]["FarmerAdmin"];
+type Crop = components["schemas"]["CropAdmin"];
+type Farmer = components["schemas"]["FarmerAdmin"] & { crops?: string[]; crop_ids?: number[] };
 
-const EMPTY = { full_name: "", sex: "F" as "F" | "M", phone: "", villageId: "" };
+const EMPTY = { full_name: "", sex: "F" as "F" | "M", phone: "", villageId: "", cropIds: [] as number[] };
 
 export function FarmersPanel() {
   const villages = useAdminResource<Village>("villages");
+  const crops = useAdminResource<Crop>("crops");
   const { list, create, update, remove } = useAdminResource<Farmer>("farmers");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draft, setDraft] = useState(EMPTY);
@@ -24,7 +27,10 @@ export function FarmersPanel() {
   }
   function startEdit(row: Farmer) {
     setEditingId(row.id);
-    setDraft({ full_name: row.full_name, sex: row.sex, phone: row.phone ?? "", villageId: String(row.village) });
+    setDraft({
+      full_name: row.full_name, sex: row.sex, phone: row.phone ?? "",
+      villageId: String(row.village), cropIds: row.crop_ids ?? [],
+    });
   }
   function cancel() {
     setEditingId(null);
@@ -34,6 +40,7 @@ export function FarmersPanel() {
     const body = {
       full_name: draft.full_name, sex: draft.sex,
       phone: draft.phone || null, village: Number(draft.villageId),
+      crop_ids: draft.cropIds,
     };
     if (editingId) update.mutate({ id: editingId, ...body }, { onSuccess: cancel });
     else create.mutate(body, { onSuccess: cancel });
@@ -42,12 +49,12 @@ export function FarmersPanel() {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-soft">
-        Plot and planting details aren't managed here — farmers set those up through registration
-        (agent or self sign-up). This is for the core profile.
+        Tick every crop this farmer grows this season — one person can grow several.
       </p>
 
       {editingId !== null ? (
-        <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-3 rounded-lg bg-panel p-4">
+        <form onSubmit={onSubmit} className="flex flex-col gap-3 rounded-lg bg-panel p-4">
+          <div className="flex flex-wrap items-end gap-3">
           <Field label="Full name" required value={draft.full_name}
             onChange={(e) => setDraft({ ...draft, full_name: e.target.value })} />
           <Select label="Sex" value={draft.sex} onChange={(e) => setDraft({ ...draft, sex: e.target.value as "F" | "M" })}>
@@ -62,12 +69,20 @@ export function FarmersPanel() {
               </option>
             ))}
           </Select>
+          </div>
+          <CropChecklist
+            crops={crops.list.data ?? []}
+            selected={draft.cropIds}
+            onChange={(cropIds) => setDraft({ ...draft, cropIds })}
+          />
+          <div className="flex gap-2">
           <Button type="submit" disabled={create.isPending || update.isPending}>
             {editingId ? "Save" : "Add"}
           </Button>
           <Button type="button" variant="ghost" onClick={cancel}>
             Cancel
           </Button>
+          </div>
         </form>
       ) : (
         <Button onClick={startCreate} className="self-start">
@@ -79,6 +94,7 @@ export function FarmersPanel() {
         <ResourceTable
           columns={[
             { key: "full_name", label: "Name" },
+            { key: "crops", label: "Crops", render: (r) => r.crops?.length ? r.crops.join(", ") : "—" },
             { key: "village_name", label: "Village" },
             { key: "parish_name", label: "Parish" },
             { key: "phone", label: "Phone" },

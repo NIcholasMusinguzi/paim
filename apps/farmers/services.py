@@ -3,10 +3,14 @@ import hashlib
 from django.conf import settings
 from django.db import transaction
 
-from .models import Farmer, Planting, Plot
+from .models import Crop, Farmer, Planting, Plot
 
 
 class SignupError(Exception):
+    pass
+
+
+class FarmerError(Exception):
     pass
 
 
@@ -50,6 +54,48 @@ def register_farmer(*, full_name, village, sex, registered_by, language="lug", r
         plot = Plot.objects.create(farmer=farmer, area_acres=area_acres)
         Planting.objects.create(plot=plot, season=season, crop=crop, planting_date=planting_date)
     return farmer, True
+
+
+@transaction.atomic
+def set_current_crops(*, farmer, crop_ids, planting_date=None, area_acres=None):
+    """Replace this season's plantings with the given crops. One farmer can
+    grow several crops; they share a plot. An empty list clears them."""
+    from django.utils import timezone
+
+    from apps.advisory.selectors import current_season
+
+    season = current_season()
+    if season is None:
+        raise FarmerError("There is no active season to update farm details.")
+    wanted = list(crop_ids)
+    known = set(Crop.objects.filter(pk__in=wanted).values_list("id", flat=True))
+    if any(cid not in known for cid in wanted):
+        raise FarmerError("Unknown crop.")
+
+    plot = farmer.plots.order_by("id").first()
+    if plot is None:
+        plot = Plot.objects.create(
+            farmer=farmer, area_acres=area_acres if area_acres is not None else "1.00")
+    elif area_acres is not None:
+        plot.area_acres = area_acres
+        plot.save(update_fields=["area_acres", "updated_at"])
+
+    date = planting_date or timezone.localdate()
+    existing = {
+        row.crop_id: row
+        for row in Planting.objects.filter(plot__farmer=farmer, season=season)
+    }
+    for crop_id in wanted:
+        planting = existing.get(crop_id)
+        if planting is None:
+            Planting.objects.create(plot=plot, season=season, crop_id=crop_id, planting_date=date)
+        elif planting_date is not None:
+            planting.planting_date = planting_date
+            planting.save(update_fields=["planting_date", "updated_at"])
+    Planting.objects.filter(plot__farmer=farmer, season=season).exclude(crop_id__in=wanted).delete()
+    if hasattr(farmer, "_prefetched_objects_cache"):
+        farmer._prefetched_objects_cache.pop("plots", None)
+    return farmer
 
 
 def hash_nin(nin):

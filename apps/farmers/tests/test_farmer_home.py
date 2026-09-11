@@ -116,3 +116,18 @@ def test_reference_data_lists_seasons_and_crops(world):
     assert res.status_code == 200
     assert [c["name"] for c in res.data["crops"]] == ["Maize"]
     assert len(res.data["seasons"]) == 1
+
+
+@pytest.mark.django_db
+def test_farmer_profile_can_grow_multiple_crops(world):
+    beans = Crop.objects.create(name="Beans")
+    client = APIClient()
+    client.post("/api/v1/auth/login/", {"phone": "+256700000031", "password": "pin1234"}, format="json")
+    maize_id = world["crop"].id
+    res = client.patch("/api/v1/farmer/profile/", {
+        "crop_ids": [maize_id, beans.id],
+    }, format="json")
+    assert res.status_code == 200
+    assert set(res.data["crop_ids"]) == {maize_id, beans.id}
+    assert set(res.data["crops"]) == {"Maize", "Beans"}
+    assert Planting.objects.filter(plot__farmer=world["farmer"]).count() == 2

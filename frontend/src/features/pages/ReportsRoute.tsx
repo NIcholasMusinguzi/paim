@@ -196,6 +196,7 @@ function ReportsRoute() {
           { key: "parish", label: "Parish" },
           { key: "village", label: "Village" },
           { key: "farmer", label: "Farmer" },
+          { key: "crops", label: "Crops" },
           { key: "sex", label: "Sex" },
           { key: "phone", label: "Phone" },
         ]}

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.farmers.selectors import crop_names
 from apps.market.services import sellable_bags
 
 
@@ -19,6 +20,10 @@ class FarmerDirectorySerializer(serializers.Serializer):
     parish = serializers.CharField(source="village.parish.name")
     subcounty = serializers.CharField(source="village.parish.subcounty.name")
     district = serializers.CharField(source="village.parish.subcounty.district.name")
+    crops = serializers.SerializerMethodField()
+
+    def get_crops(self, farmer) -> list[str]:
+        return crop_names(farmer)
 
 
 class AdviceSerializer(serializers.Serializer):
@@ -97,6 +102,7 @@ class FarmerProfileSerializer(serializers.Serializer):
     area_acres = serializers.DecimalField(
         max_digits=5, decimal_places=2, required=False)
     crop_id = serializers.IntegerField(required=False)
+    crop_ids = serializers.ListField(child=serializers.IntegerField(), required=False)
     planting_date = serializers.DateField(required=False)
 
 

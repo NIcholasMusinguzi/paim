@@ -62,6 +62,38 @@ def test_admin_can_edit_and_list_farmers(admin, village):
 
 
 @pytest.mark.django_db
+def test_admin_can_assign_multiple_crops_when_editing_a_farmer(admin, village):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.farmers.models import Crop, Planting, Season
+
+    today = timezone.localdate()
+    Season.objects.create(
+        year=today.year, season_no=1,
+        start_date=today - timedelta(days=5), end_date=today + timedelta(days=100))
+    maize = Crop.objects.create(name="Maize")
+    beans = Crop.objects.create(name="Beans")
+    client = _client(admin)
+    created = client.post("/api/v1/admin/farmers/", {
+        "full_name": "Grace Nabirye", "sex": "F", "village": village.id,
+        "crop_ids": [maize.id],
+    }, format="json")
+    assert created.status_code == 201
+    assert created.data["crops"] == ["Maize"]
+    assert created.data["crop_ids"] == [maize.id]
+
+    updated = client.patch(f"/api/v1/admin/farmers/{created.data['id']}/", {
+        "crop_ids": [maize.id, beans.id],
+    }, format="json")
+    assert updated.status_code == 200
+    assert set(updated.data["crops"]) == {"Maize", "Beans"}
+    farmer_id = created.data["id"]
+    assert Planting.objects.filter(plot__farmer_id=farmer_id).count() == 2
+
+
+@pytest.mark.django_db
 def test_deleting_a_farmer_with_declarations_returns_409(admin, village):
     from datetime import timedelta
 

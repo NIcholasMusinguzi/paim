@@ -12,6 +12,28 @@ def farmers_for_parishes(parish_ids):
     return Farmer.objects.filter(village__parish_id__in=parish_ids).select_related("village")
 
 
+def crop_ids_for(farmer) -> list[int]:
+    ids = []
+    seen = set()
+    for plot in farmer.plots.all():
+        for planting in plot.plantings.all():
+            if planting.crop_id not in seen:
+                seen.add(planting.crop_id)
+                ids.append(planting.crop_id)
+    return ids
+
+
+def crop_names(farmer) -> list[str]:
+    names = []
+    seen = set()
+    for plot in farmer.plots.all():
+        for planting in plot.plantings.all():
+            if planting.crop_id not in seen:
+                seen.add(planting.crop_id)
+                names.append(planting.crop.name)
+    return names
+
+
 def farmer_home(farmer: Farmer) -> dict:
     """Everything the farmer route needs in one read, composed here rather
     than as five client round trips (IMPLEMENTATION_REACT.md section 4.1).

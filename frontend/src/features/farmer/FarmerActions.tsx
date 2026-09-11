@@ -4,6 +4,7 @@ import { api, ApiError } from "../../api/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "../../design/ui/Button";
 import { Card } from "../../design/ui/Card";
+import { CropChecklist } from "../../design/ui/CropChecklist";
 import { Field } from "../../design/ui/Field";
 import { Select } from "../../design/ui/Select";
 
@@ -16,6 +17,7 @@ type Profile = {
   language: string;
   area_acres: string | null;
   crop_id: number | null;
+  crop_ids: number[];
   planting_date: string | null;
 };
 
@@ -87,21 +89,12 @@ export function FarmerProfileSection() {
             value={values.area_acres ?? ""}
             onChange={(e) => setForm({ ...values, area_acres: e.target.value })}
           />
-          <Select
-            label="Main crop"
-            value={values.crop_id ?? ""}
-            onChange={(e) =>
-              setForm({ ...values, crop_id: Number(e.target.value) })
-            }
-          >
-            <option value="">Select crop</option>
-            {reference?.crops.map((crop) => (
-              <option key={crop.id} value={crop.id}>
-                {crop.name}
-              </option>
-            ))}
-          </Select>
         </div>
+        <CropChecklist
+          crops={reference?.crops ?? []}
+          selected={values.crop_ids ?? []}
+          onChange={(crop_ids) => setForm({ ...values, crop_ids, crop_id: crop_ids[0] ?? null })}
+        />
         <Field
           label="Planting date"
           type="date"
