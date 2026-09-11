@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from apps.accounts.models import Role
 from apps.accounts.permissions import IsOfficer
 from apps.accounts.scoping import parish_ids_for
-from apps.farmers.models import Crop, Planting
+from apps.farmers.models import Crop, Planting, Season
 from apps.farmers.selectors import crop_ids_for, crop_names, farmer_home, farmers_for_parishes
 from apps.farmers.services import FarmerError, set_current_crops
 from apps.farmers.serializers import (
