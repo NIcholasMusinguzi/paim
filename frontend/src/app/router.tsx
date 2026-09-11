@@ -28,6 +28,7 @@ export const router = createBrowserRouter([
         children: [
           { path: "advisories", lazy: () => import("../features/pages/AdvisoriesRoute") },
           { path: "farmers", lazy: () => import("../features/pages/FarmersRoute") },
+          { path: "insights", lazy: () => import("../features/pages/InsightsRoute") },
         ],
       },
       {

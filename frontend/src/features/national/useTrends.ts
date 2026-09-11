@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { components } from "../../api/schema";
 
-export type TrendInsight = components["schemas"]["TrendInsight"];
+export type TrendInsight = components["schemas"]["TrendInsight"] & { scope_name?: string };
 
 export function useTrends(status: "pending" | "published") {
   return useQuery({

@@ -1,26 +1,28 @@
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import Role
+from apps.accounts.permissions import IsOfficer
 from apps.analytics.exports import pdf_response, xlsx_response
 from apps.analytics.models import (
     DistrictSeasonMetric,
     NationalSeasonMetric,
-    ParishSeasonMetric,
     TrendInsight,
 )
 from apps.analytics.reports import BUILDERS
+from apps.analytics.selectors import district_in_scope, district_season_bars, parish_comparison
 from apps.analytics.serializers import (
     NationalMetricsResponseSerializer,
     ParishMetricSerializer,
+    SeasonBarSerializer,
     TrendInsightSerializer,
 )
-from apps.analytics.trends import TrendApprovalError, approve_insight, pending_insights_for
+from apps.analytics.trends import TrendApprovalError, approve_insight, insights_for
 
 
 class IsDistrictOrNationalAdmin(BasePermission):
@@ -76,17 +78,30 @@ class NationalMetricsView(APIView):
 
 
 class DistrictParishesView(APIView):
-    permission_classes = [IsDistrictOrNationalAdmin]
+    permission_classes = [IsOfficer]
 
     @extend_schema(responses={200: ParishMetricSerializer(many=True)})
     def get(self, request, district_id):
+        if not district_in_scope(request.user, district_id):
+            raise PermissionDenied("This district is outside your scope.")
         season_id, crop_id = _season_and_crop(request)
-        rows = (
-            ParishSeasonMetric.objects.filter(
-                parish__subcounty__district_id=district_id, season_id=season_id, crop_id=crop_id)
-            .select_related("parish").order_by("-pct_grade1")
-        )
+        rows = parish_comparison(
+            request.user, district_id=district_id, season_id=season_id, crop_id=crop_id)
         return Response(ParishMetricSerializer(rows, many=True).data)
+
+
+class DistrictSeasonBarsView(APIView):
+    permission_classes = [IsOfficer]
+
+    @extend_schema(responses={200: SeasonBarSerializer(many=True)})
+    def get(self, request, district_id):
+        if not district_in_scope(request.user, district_id):
+            raise PermissionDenied("This district is outside your scope.")
+        crop_id = request.query_params.get("crop")
+        if not crop_id:
+            raise ValidationError("crop query parameter is required.")
+        return Response(SeasonBarSerializer(
+            district_season_bars(district_id=district_id, crop_id=crop_id), many=True).data)
 
 
 class KindReportView(APIView):
@@ -123,16 +138,12 @@ class MarketReportView(KindReportView):
 
 
 class TrendListView(APIView):
-    permission_classes = [IsDistrictOrNationalAdmin]
+    permission_classes = [IsOfficer]
 
     @extend_schema(responses={200: TrendInsightSerializer(many=True)})
     def get(self, request):
         status_filter = request.query_params.get("status", "pending")
-        if status_filter == "published":
-            rows = TrendInsight.objects.filter(published_at__isnull=False).select_related(
-                "crop", "approved_by").order_by("-published_at")
-        else:
-            rows = pending_insights_for(request.user)
+        rows = insights_for(request.user, published=status_filter == "published")
         return Response(TrendInsightSerializer(rows, many=True).data)
 
 

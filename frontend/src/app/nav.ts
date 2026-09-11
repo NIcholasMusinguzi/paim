@@ -26,6 +26,7 @@ const OFFICER_NAV: NavItem[] = [
   { label: "Bulk Sales", to: "/parish", icon: "truck", match: "prefix" },
   { label: "Bids", to: "/bids", icon: "truck", match: "prefix" },
   { label: "Reports", to: "/reports", icon: "file", match: "prefix" },
+  { label: "Insights", to: "/insights", icon: "chart", match: "prefix" },
   { label: "Settings", to: "/national/admin", icon: "gear", match: "prefix" },
 ];
 
@@ -40,6 +41,7 @@ const PARISH_NAV: NavItem[] = [
   { label: "Bulk Sales", to: "/parish#sales", icon: "truck", match: "prefix" },
   { label: "Bids", to: "/bids", icon: "truck", match: "prefix" },
   { label: "Reports", to: "/reports", icon: "file", match: "prefix" },
+  { label: "Insights", to: "/insights", icon: "chart", match: "prefix" },
 ];
 
 const FARMER_NAV: NavItem[] = [
