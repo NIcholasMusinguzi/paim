@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 
 import { ApiError } from "../../api/client";
+import { useMarketPrices } from "../../api/hooks/useMarketPrices";
 import { useAuth } from "../../app/AuthProvider";
-import { formatUgx } from "../../design/format";
+import { formatInt, formatUgx } from "../../design/format";
 import { Card } from "../../design/ui/Card";
 import { EmptyState } from "../../design/ui/EmptyState";
 import { HeroBanner } from "../../design/ui/HeroBanner";
@@ -74,6 +75,7 @@ function ParishPicker({
 function Dashboard({ parishId }: { parishId: number }) {
   const { data, isLoading, isError, error } = useParishDashboard(parishId);
   const { status, lastEventAt } = useLiveChannel(parishId);
+  const { data: marketPrices } = useMarketPrices();
 
   if (isLoading) return <div className="text-soft">Loading…</div>;
   if (isError) {
@@ -89,6 +91,9 @@ function Dashboard({ parishId }: { parishId: number }) {
   }
 
   const dash = data!;
+  const producePrices = (marketPrices ?? []).filter((p) => p.category === "produce");
+  const listedPrice = producePrices.find((p) => p.item_name === dash.lot?.crop);
+  const avgPrice = dash.metrics?.avg_price_per_kg ?? listedPrice?.price ?? null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -120,11 +125,7 @@ function Dashboard({ parishId }: { parishId: number }) {
           />
           <StatCard
             label="Average price"
-            value={
-              dash.metrics.avg_price_per_kg != null
-                ? formatUgx(dash.metrics.avg_price_per_kg)
-                : "—"
-            }
+            value={avgPrice != null ? formatUgx(avgPrice) : "—"}
             icon="tag"
             tone="grain"
           />
@@ -205,6 +206,23 @@ function Dashboard({ parishId }: { parishId: number }) {
                 {formatUgx(dash.metrics.avg_price_per_kg)}/kg
               </span>
             </div>
+          ) : producePrices.length > 0 ? (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-rule text-left text-xs text-soft">
+                  <th className="py-2 font-medium">Commodity</th>
+                  <th className="py-2 font-medium">UGX/kg</th>
+                </tr>
+              </thead>
+              <tbody>
+                {producePrices.map((p) => (
+                  <tr key={p.id} className="border-b border-rule last:border-0">
+                    <td className="py-2 font-medium text-ink">{p.item_name}</td>
+                    <td className="tabular py-2">{formatInt(p.price)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           ) : (
             <EmptyState title="No settled price for this parish yet." />
           )}

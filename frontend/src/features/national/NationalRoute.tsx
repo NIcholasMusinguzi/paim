@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 
+import { useMarketPrices } from "../../api/hooks/useMarketPrices";
 import { usePosts } from "../../api/hooks/usePosts";
 import { useAuth } from "../../app/AuthProvider";
 import { formatDateTime, formatInt, formatUgx } from "../../design/format";
@@ -80,6 +81,7 @@ function NationalRoute() {
   const { me } = useAuth();
   const { data: ref } = useReferenceData();
   const { data: posts } = usePosts();
+  const { data: marketPrices } = useMarketPrices();
   const pending = useTrends("pending");
   const published = useTrends("published");
   const [seasonId, setSeasonId] = useState<number | null>(null);
@@ -90,7 +92,10 @@ function NationalRoute() {
 
   useEffect(() => {
     if (seasonId == null && ref?.seasons.length) setSeasonId(ref.seasons[0].id);
-    if (cropId == null && ref?.crops.length) setCropId(ref.crops[0].id);
+    if (cropId == null && ref?.crops.length) {
+      const maize = ref.crops.find((c) => c.name === "Maize");
+      setCropId(maize?.id ?? ref.crops[0].id);
+    }
   }, [ref, seasonId, cropId]);
 
   const { data, isLoading, isError } = useNationalMetrics(seasonId, cropId);
@@ -109,7 +114,14 @@ function NationalRoute() {
     [ref?.crops, cropQueries],
   );
 
+  const producePrices = useMemo(
+    () => (marketPrices ?? []).filter((p) => p.category === "produce"),
+    [marketPrices],
+  );
+
   const selectedCrop = ref?.crops.find((c) => c.id === cropId)?.name;
+  const listedPrice = producePrices.find((p) => p.item_name === selectedCrop);
+  const avgPrice = data?.national?.avg_price_per_kg ?? listedPrice?.price ?? null;
   const topDistrict = data?.districts[0];
   const insights = [
     ...(advisoryFilter !== "published" ? (pending.data ?? []) : []),
@@ -127,7 +139,7 @@ function NationalRoute() {
           <StatCard label="Districts reporting" value={data?.national?.districts_reporting} icon="grid" tone="sea" />
           <StatCard
             label="Average price"
-            value={data?.national?.avg_price_per_kg != null ? formatUgx(data.national.avg_price_per_kg) : "—"}
+            value={avgPrice != null ? formatUgx(avgPrice) : "—"}
             icon="tag"
             tone="grain"
             hint={
@@ -236,7 +248,10 @@ function NationalRoute() {
           ) : (
             <Suspense fallback={<p className="text-sm text-soft">Loading chart…</p>}>
               {data?.districts ? (
-                <DistrictPriceChart districts={data.districts} />
+                <DistrictPriceChart
+                  districts={data.districts}
+                  fallback={producePrices.map((p) => ({ name: p.item_name, price: p.price }))}
+                />
               ) : (
                 <p className="text-sm text-soft">Loading chart…</p>
               )}
@@ -298,7 +313,7 @@ function NationalRoute() {
         </Card>
 
         <Card title="Current market prices" className="lg:col-span-4">
-          {cropSeries.length === 0 ? (
+          {producePrices.length === 0 ? (
             <EmptyState title="No crop prices yet this season." />
           ) : (
             <table className="w-full text-sm">
@@ -310,10 +325,10 @@ function NationalRoute() {
                 </tr>
               </thead>
               <tbody>
-                {cropSeries.map((s) => (
-                  <tr key={s.name} className="border-b border-rule last:border-0">
-                    <td className="py-2 font-medium text-ink">{s.name}</td>
-                    <td className="tabular py-2">{s.price ?? "—"}</td>
+                {producePrices.map((p) => (
+                  <tr key={p.id} className="border-b border-rule last:border-0">
+                    <td className="py-2 font-medium text-ink">{p.item_name}</td>
+                    <td className="tabular py-2">{formatInt(p.price)}</td>
                     <td className="py-2 text-right text-leaf">
                       <Icons.trendUp className="ml-auto h-4 w-4" />
                     </td>

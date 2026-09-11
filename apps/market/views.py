@@ -1,4 +1,3 @@
-from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.exceptions import PermissionDenied
@@ -40,10 +39,20 @@ class HealthView(APIView):
 class DailyMarketPriceView(APIView):
     @extend_schema(responses={200: MarketPriceSerializer(many=True)})
     def get(self, request):
-        price_date = request.query_params.get("date", timezone.localdate())
-        prices = MarketPrice.objects.filter(
-            price_date=price_date).order_by("category", "item_name")
-        return Response(MarketPriceSerializer(prices, many=True).data)
+        qs = MarketPrice.objects.all()
+        price_date = request.query_params.get("date")
+        if price_date:
+            prices = qs.filter(price_date=price_date).order_by("category", "item_name")
+            return Response(MarketPriceSerializer(prices, many=True).data)
+        latest, seen = [], set()
+        for row in qs.order_by("-price_date", "-id"):
+            key = (row.category, row.item_name)
+            if key in seen:
+                continue
+            seen.add(key)
+            latest.append(row)
+        latest.sort(key=lambda row: (row.category, row.item_name.lower()))
+        return Response(MarketPriceSerializer(latest, many=True).data)
 
 
 class ParishDashboardView(APIView):

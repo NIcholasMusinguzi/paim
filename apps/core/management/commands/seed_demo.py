@@ -135,15 +135,18 @@ BUYERS = [
 ]
 
 MARKET_PRICES = [
-    ("Maize grain", "produce", 1150, "UGX/kg", "Katosi landing", "Farm-gate survey"),
-    ("Dry beans (Nambale)", "produce", 3200, "UGX/kg", "Nakasero market", "Farm-gate survey"),
-    ("Robusta kiboko", "produce", 4500, "UGX/kg", "Mukono coffee mill", "UCDA weekly"),
-    ("Cassava fresh", "produce", 800, "UGX/kg", "Jinja central", "Farm-gate survey"),
-    ("Matooke bunch", "produce", 18000, "UGX/bunch", "Masaka taxi park", "Farm-gate survey"),
-    ("Rice (upland)", "produce", 2800, "UGX/kg", "Iganga market", "Farm-gate survey"),
-    ("Groundnuts unshelled", "produce", 2100, "UGX/kg", "Kayunga market", "Farm-gate survey"),
+    ("Maize", "produce", 1150, "UGX/kg", "Katosi landing", "Farm-gate survey"),
+    ("Beans", "produce", 3200, "UGX/kg", "Nakasero market", "Farm-gate survey"),
+    ("Coffee (Robusta)", "produce", 4500, "UGX/kg", "Mukono coffee mill", "UCDA weekly"),
+    ("Cassava", "produce", 800, "UGX/kg", "Jinja central", "Farm-gate survey"),
+    ("Banana (Matooke)", "produce", 1800, "UGX/kg", "Masaka taxi park", "Farm-gate survey"),
+    ("Rice", "produce", 2800, "UGX/kg", "Iganga market", "Farm-gate survey"),
+    ("Groundnuts", "produce", 2100, "UGX/kg", "Kayunga market", "Farm-gate survey"),
     ("Sweet potato", "produce", 900, "UGX/kg", "Wakiso stalls", "Farm-gate survey"),
     ("Sorghum", "produce", 1400, "UGX/kg", "Luweero market", "Farm-gate survey"),
+    ("Irish potato", "produce", 1600, "UGX/kg", "Kabarole stalls", "Farm-gate survey"),
+    ("Soybean", "produce", 2500, "UGX/kg", "Lira market", "Farm-gate survey"),
+    ("Millet", "produce", 1700, "UGX/kg", "Soroti market", "Farm-gate survey"),
     ("DAP fertiliser 50kg", "input", 165000, "UGX/bag", "Nalukolongo agro", "Input dealer list"),
     ("Urea 50kg", "input", 148000, "UGX/bag", "Nalukolongo agro", "Input dealer list"),
     ("Maize seed Longe 10H", "input", 8500, "UGX/kg", "NARO stockist", "Input dealer list"),
@@ -246,6 +249,7 @@ class Command(BaseCommand):
         # in production, rather than being nested inside one giant savepoint.
         self._seed_history(geo, crops, seasons, users, farmers, buyers)
         self._seed_current_season(geo, crops, seasons["current"], users, farmers, buyers)
+        self._seed_current_awards(geo, crops, seasons["current"], users, farmers, buyers)
         self._seed_posts(geo, users, farmers)
         self._seed_advisory_requests(geo, users, farmers)
         self._seed_trends(geo, crops)
@@ -321,9 +325,9 @@ class Command(BaseCommand):
 
     def _seed_market_prices(self):
         today = timezone.localdate()
-        for i, (item_name, category, price, unit, market, source) in enumerate(MARKET_PRICES):
-            MarketPrice.objects.get_or_create(
-                item_name=item_name, price_date=today - timedelta(days=i % 5), market=market,
+        for item_name, category, price, unit, market, source in MARKET_PRICES:
+            MarketPrice.objects.update_or_create(
+                item_name=item_name, price_date=today, market=market,
                 defaults={
                     "category": category, "price": price, "unit": unit,
                     "source": f"PAIM demo seed — {source}",
@@ -424,9 +428,13 @@ class Command(BaseCommand):
         if not farmers:
             return
         lot = Lot.objects.create(parish=parish, season=season, crop=crop, min_bags=parish.lot_min_bags)
-        for farmer in farmers[:6]:
-            bags = rng.randint(3, 8)
-            moisture = rng.choice(["11.5", "12.8", "13.5", "14.9", "16.2"])
+        take = farmers[:6]
+        need = parish.lot_min_bags
+        for i, farmer in enumerate(take):
+            last = i == len(take) - 1
+            bags = max(need, rng.randint(3, 8)) if last else rng.randint(3, 8)
+            need = max(0, need - bags)
+            moisture = rng.choice(["11.5", "12.8", "13.5", "14.9"])
             Declaration.objects.create(
                 farmer=farmer, lot=lot, bags=bags, moisture_pct=moisture,
                 grade=grade_for(moisture), declared_via="agent")
@@ -525,6 +533,33 @@ class Command(BaseCommand):
                 for j, buyer in enumerate(rng.sample(buyers, min(2, len(buyers)))):
                     submit_bid(lot=lot, buyer=buyer, price_per_kg=900 + i * 40 - j * 15,
                                terms="Cash on delivery")
+
+    def _seed_current_awards(self, geo, crops, season, users, farmers, buyers):
+        """One awarded maize lot per district in the current season so the
+        national dashboard has district prices instead of empty cells.
+        Skips the showcase parish left unawarded for the officer demo."""
+        rng = random.Random(13)
+        by_parish: dict[str, list] = {}
+        maize_by_parish: dict[str, list] = {}
+        for f in farmers:
+            by_parish.setdefault(f["parish"], []).append(f["farmer"])
+            if f["crop"] == "maize":
+                maize_by_parish.setdefault(f["parish"], []).append(f["farmer"])
+        showcase = max(maize_by_parish, key=lambda p: len(maize_by_parish[p])) if maize_by_parish else None
+        seen_districts: set[int] = set()
+        for parish_name, parish in geo["parishes"].items():
+            district_id = parish.subcounty.district_id
+            if district_id in seen_districts or parish_name == showcase:
+                continue
+            parish_farmers = by_parish.get(parish_name, [])
+            if not parish_farmers:
+                continue
+            self._fill_closed_lot(
+                parish=parish, season=season, crop=crops["maize"],
+                farmers=parish_farmers, buyers=buyers, chief=users["chiefs"][parish_name],
+                rng=rng, minute_ref=f"{parish_name}-{season.year}{season.season_no}-maize-award",
+                base_price=1100)
+            seen_districts.add(district_id)
 
     # -- posts / advisory requests -----------------------------------------
 
