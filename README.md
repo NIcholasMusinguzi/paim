@@ -3,6 +3,8 @@
 Parish Agricultural Information and Market Linkage. Django API + realtime backend
 (`apps/`, `config/`), React frontend (`frontend/`) — see `IMPLEMENTATION_REACT.md`.
 
+**New to the repo?** Follow **[INSTALL.md](INSTALL.md)** for a full setup on Windows, macOS, and Linux.
+
 ## Backend
 
 ```bash
