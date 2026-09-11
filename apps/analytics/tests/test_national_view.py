@@ -8,6 +8,7 @@ from apps.accounts.models import Role, ScopeLevel, SystemUser
 from apps.analytics.models import DistrictSeasonMetric, NationalSeasonMetric
 from apps.farmers.models import Crop, Season
 from apps.geo.models import District
+from apps.market.models import MarketPrice
 
 
 @pytest.fixture
@@ -65,6 +66,19 @@ def test_national_metrics_returns_zero_summary_without_cached_rollup(world):
     assert res.data["national"]["farmers_registered"] == 0
     assert res.data["national"]["farmers_active"] == 0
     assert res.data["national"]["avg_price_per_kg"] is None
+
+
+@pytest.mark.django_db
+def test_national_metrics_use_listed_market_price_when_no_awarded_lot(world):
+    NationalSeasonMetric.objects.filter(
+        season=world["season"], crop=world["crop"]).delete()
+    MarketPrice.objects.create(
+        item_name="Maize", category="produce", price=1150, unit="UGX/kg",
+        market="Katosi", price_date=timezone.localdate(), source="survey")
+    res = _client(world["national_admin"]).get(
+        f"/api/v1/metrics/national/?season={world['season'].id}&crop={world['crop'].id}")
+    assert res.status_code == 200
+    assert res.data["national"]["avg_price_per_kg"] == 1150
 
 
 @pytest.mark.django_db

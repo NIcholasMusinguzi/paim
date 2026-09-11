@@ -29,7 +29,7 @@ export function StatCard({
         <Icon className="h-5 w-5" />
       </span>
       <div className="min-w-0">
-        <p className="tabular text-2xl font-semibold tracking-tight text-ink">{display}</p>
+        <p className="tabular whitespace-nowrap text-2xl font-semibold tracking-tight text-ink">{display}</p>
         <p className="text-xs font-medium text-soft">{label}</p>
         {hint && <p className="mt-0.5 text-xs text-leaf">{hint}</p>}
       </div>

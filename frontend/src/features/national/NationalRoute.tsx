@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import { useMarketPrices } from "../../api/hooks/useMarketPrices";
 import { usePosts } from "../../api/hooks/usePosts";
 import { useAuth } from "../../app/AuthProvider";
-import { formatDateTime, formatInt, formatUgx } from "../../design/format";
+import { formatDateTime, formatInt } from "../../design/format";
 import { Card } from "../../design/ui/Card";
 import { EmptyState } from "../../design/ui/EmptyState";
 import { HeroBanner } from "../../design/ui/HeroBanner";
@@ -77,6 +77,33 @@ const DISTRICT_ACTIONS: QuickAction[] = ADMIN_ACTIONS.filter(
   (a) => a.label !== "Add Farmer" && a.label !== "Register Buyer",
 );
 
+function listedProducePrice(
+  prices: { item_name: string; price: number }[],
+  cropName: string | undefined,
+): number | null {
+  if (!prices.length) return null;
+  if (cropName) {
+    const want = cropName.toLowerCase();
+    const exact = prices.find((p) => p.item_name.toLowerCase() === want);
+    if (exact) return exact.price;
+    const stem = want.split(/\s+/)[0];
+    const fuzzy = prices.find((p) => p.item_name.toLowerCase().startsWith(stem));
+    if (fuzzy) return fuzzy.price;
+  }
+  return prices[0].price;
+}
+
+function weightedDistrictPrice(
+  districts: { avg_price_per_kg: number | null; bags_declared: number }[],
+): number | null {
+  const valued = districts.filter((d) => d.avg_price_per_kg != null);
+  if (!valued.length) return null;
+  const weight = valued.reduce((sum, d) => sum + (d.bags_declared || 1), 0);
+  return Math.round(
+    valued.reduce((sum, d) => sum + (d.avg_price_per_kg as number) * (d.bags_declared || 1), 0) / weight,
+  );
+}
+
 function NationalRoute() {
   const { me } = useAuth();
   const { data: ref } = useReferenceData();
@@ -120,8 +147,9 @@ function NationalRoute() {
   );
 
   const selectedCrop = ref?.crops.find((c) => c.id === cropId)?.name;
-  const listedPrice = producePrices.find((p) => p.item_name === selectedCrop);
-  const avgPrice = data?.national?.avg_price_per_kg ?? listedPrice?.price ?? null;
+  const listedPrice = listedProducePrice(producePrices, selectedCrop);
+  const districtAvg = weightedDistrictPrice(data?.districts ?? []);
+  const avgPrice = data?.national?.avg_price_per_kg ?? districtAvg ?? listedPrice;
   const topDistrict = data?.districts[0];
   const insights = [
     ...(advisoryFilter !== "published" ? (pending.data ?? []) : []),
@@ -139,12 +167,12 @@ function NationalRoute() {
           <StatCard label="Districts reporting" value={data?.national?.districts_reporting} icon="grid" tone="sea" />
           <StatCard
             label="Average price"
-            value={avgPrice != null ? formatUgx(avgPrice) : "—"}
+            value={avgPrice}
             icon="tag"
             tone="grain"
             hint={
               selectedCrop && data?.national
-                ? `${selectedCrop} · Grade 1 ${data.national.pct_grade1}%`
+                ? `${selectedCrop} · UGX/kg · Grade 1 ${data.national.pct_grade1}%`
                 : selectedCrop
             }
           />

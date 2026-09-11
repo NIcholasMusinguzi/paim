@@ -59,7 +59,24 @@ def national_metric(*, season_id, crop_id) -> dict:
         if cached:
             for field in ("bags_declared", "pct_grade1", "avg_price_per_kg", "districts_reporting"):
                 metric[field] = getattr(cached, field)
+    if metric["avg_price_per_kg"] is None:
+        metric["avg_price_per_kg"] = _listed_produce_price(crop_id)
     return metric
+
+
+def _listed_produce_price(crop_id) -> int | None:
+    from apps.farmers.models import Crop
+    from apps.market.models import MarketPrice
+
+    crop_name = Crop.objects.filter(pk=crop_id).values_list("name", flat=True).first()
+    if not crop_name:
+        return None
+    qs = MarketPrice.objects.filter(category=MarketPrice.Category.PRODUCE)
+    row = qs.filter(item_name__iexact=crop_name).order_by("-price_date", "-id").first()
+    if row is None:
+        stem = crop_name.split()[0]
+        row = qs.filter(item_name__istartswith=stem).order_by("-price_date", "-id").first()
+    return row.price if row else None
 
 
 def weighted(rows, value_field: str, weight_field: str = "bags_declared"):
